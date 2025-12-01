@@ -47,6 +47,7 @@ def load_args_hf2mg(args):
     args.norm_has_bias = False
     args.tokenizer_type = "Qwen2TokenizerFS"
 
+
 def save_args_mg2hf(args):
     from .llama_model.configuration_llama import LlamaConfig
 
