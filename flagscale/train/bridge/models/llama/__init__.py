@@ -36,7 +36,6 @@ from flagscale.train.bridge.models.llama.llama_provider import (
     LlamaModelProvider,
 )
 
-
 __all__ = [
     "LlamaModelProvider",
     "Llama2ModelProvider7B",

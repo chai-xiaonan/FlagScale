@@ -20,8 +20,10 @@ override system while maintaining compatibility with Megatron Core's post_init b
 
 from dataclasses import dataclass
 
-from megatron.core.transformer.transformer_config import MLATransformerConfig as MCoreMLATransformerConfig
-from megatron.core.transformer.transformer_config import TransformerConfig as MCoreTransformerConfig
+from megatron.core.transformer.transformer_config import (
+    MLATransformerConfig as MCoreMLATransformerConfig,
+    TransformerConfig as MCoreTransformerConfig,
+)
 
 
 @dataclass

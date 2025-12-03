@@ -14,9 +14,9 @@
 
 import abc
 import os
+
 from pathlib import Path
 from typing import Callable, Generic, TypedDict, TypeVar, Union
-
 
 try:
     from typing import Unpack
@@ -32,6 +32,7 @@ except ImportError:
 from typing import Callable
 
 import torch
+
 from megatron.core import parallel_state, tensor_parallel
 from megatron.core.distributed import (
     DistributedDataParallel,
@@ -47,7 +48,6 @@ from megatron.core.utils import get_model_config
 from flagscale.train.bridge.models.config import from_hf_pretrained, save_hf_pretrained
 from flagscale.train.bridge.utils.common_utils import get_local_rank_preinit
 from flagscale.train.bridge.utils.instantiate_utils import InstantiationMode
-
 
 try:
     from megatron.core.fp8_utils import correct_amax_history_if_needed
@@ -79,7 +79,10 @@ class ModelProviderMixin(abc.ABC, Generic[ModelT]):
 
     @abc.abstractmethod
     def provide(
-        self, pre_process: bool | None = None, post_process: bool | None = None, vp_stage: int | None = None
+        self,
+        pre_process: bool | None = None,
+        post_process: bool | None = None,
+        vp_stage: int | None = None,
     ) -> ModelT:
         """Abstract method to provide the model instance.
 
@@ -110,11 +113,13 @@ class ModelProviderMixin(abc.ABC, Generic[ModelT]):
         data_parallel_random_init: bool = True,
         use_cpu_initialization: None | bool = False,
         init_model_with_meta_device: bool | None = None,
-        pre_wrap_hook: Union[
-            Callable[[list[MegatronModule]], list[MegatronModule]],
-            list[Callable[[list[MegatronModule]], list[MegatronModule]]],
-        ]
-        | None = None,
+        pre_wrap_hook: (
+            Union[
+                Callable[[list[MegatronModule]], list[MegatronModule]],
+                list[Callable[[list[MegatronModule]], list[MegatronModule]]],
+            ]
+            | None
+        ) = None,
         post_wrap_hook: Callable[[list[MegatronModule]], list[MegatronModule]] | None = None,
     ) -> list[ModelT]:
         """Instantiate and wrap the model for distributed training.
@@ -216,7 +221,9 @@ class ModelProviderMixin(abc.ABC, Generic[ModelT]):
         parallel_state.initialize_model_parallel(
             tensor_model_parallel_size=getattr(self, "tensor_model_parallel_size", 1),
             pipeline_model_parallel_size=getattr(self, "pipeline_model_parallel_size", 1),
-            virtual_pipeline_model_parallel_size=getattr(self, "virtual_pipeline_model_parallel_size", None),
+            virtual_pipeline_model_parallel_size=getattr(
+                self, "virtual_pipeline_model_parallel_size", None
+            ),
             context_parallel_size=getattr(self, "context_parallel_size", 1) or 1,
             expert_model_parallel_size=getattr(self, "expert_model_parallel_size", 1) or 1,
             expert_tensor_parallel_size=getattr(self, "expert_tensor_parallel_size", None),
@@ -259,9 +266,7 @@ class ModelProviderMixin(abc.ABC, Generic[ModelT]):
         return composed_hook
 
     def register_pre_wrap_hook(
-        self,
-        hook: Callable[[list[MegatronModule]], list[MegatronModule]],
-        prepend: bool = False,
+        self, hook: Callable[[list[MegatronModule]], list[MegatronModule]], prepend: bool = False
     ) -> None:
         """Registers a hook to be executed before the model is wrapped.
 
@@ -305,9 +310,7 @@ class ModelProviderMixin(abc.ABC, Generic[ModelT]):
         return composed_hook
 
     def register_post_wrap_hook(
-        self,
-        hook: Callable[[list[MegatronModule]], list[MegatronModule]],
-        prepend: bool = False,
+        self, hook: Callable[[list[MegatronModule]], list[MegatronModule]], prepend: bool = False
     ) -> None:
         """Registers a hook to be executed after the model is wrapped.
 
@@ -386,7 +389,9 @@ class ModelProviderMixin(abc.ABC, Generic[ModelT]):
             config_name = self.CONFIG_NAME.rsplit(".", 1)[0]
         if config_format is None:
             config_format = self.DEFAULT_CONFIG_FORMAT
-        return save_hf_pretrained(self, save_directory, config_format=config_format, config_name=config_name, **kwargs)
+        return save_hf_pretrained(
+            self, save_directory, config_format=config_format, config_name=config_name, **kwargs
+        )
 
 
 class GetModelKwargs(TypedDict, total=False):
@@ -460,11 +465,13 @@ def get_model(
     data_parallel_random_init: bool = True,
     use_cpu_initialization: None | bool = False,
     init_model_with_meta_device: bool | None = None,
-    pre_wrap_hook: Union[
-        Callable[[list[MegatronModule]], list[MegatronModule]],
-        list[Callable[[list[MegatronModule]], list[MegatronModule]]],
-    ]
-    | None = None,
+    pre_wrap_hook: (
+        Union[
+            Callable[[list[MegatronModule]], list[MegatronModule]],
+            list[Callable[[list[MegatronModule]], list[MegatronModule]]],
+        ]
+        | None
+    ) = None,
 ) -> list[MegatronModule]:
     """Create and configure a model for distributed training.
 
@@ -505,7 +512,9 @@ def get_model(
     if bf16:
         model_provider.bf16 = bf16
 
-    model_provider.use_cpu_initialization = use_cpu_initialization if use_cpu_initialization else False
+    model_provider.use_cpu_initialization = (
+        use_cpu_initialization if use_cpu_initialization else False
+    )
     if init_model_with_meta_device:
         model_provider.init_model_with_meta_device = True
         with torch.device("meta"):
@@ -570,8 +579,7 @@ def get_model(
 
 
 def _create_model(
-    model_provider: ModelProviderMixin,
-    model_type: ModelType,
+    model_provider: ModelProviderMixin, model_type: ModelType
 ) -> list[MegatronModule]:
     """Create model instances with appropriate pipeline parallel configuration.
 
@@ -591,17 +599,15 @@ def _create_model(
         parallel_state.get_pipeline_model_parallel_world_size() > 1
         and parallel_state.get_virtual_pipeline_model_parallel_world_size() is not None
     ):
-        assert model_type != ModelType.encoder_and_decoder, (
-            "Interleaved schedule not supported for model with both encoder and decoder"
-        )
+        assert (
+            model_type != ModelType.encoder_and_decoder
+        ), "Interleaved schedule not supported for model with both encoder and decoder"
         model = []
         for i in range(parallel_state.get_virtual_pipeline_model_parallel_world_size()):
             pre_process = parallel_state.is_pipeline_first_stage(ignore_virtual=False, vp_stage=i)
             post_process = parallel_state.is_pipeline_last_stage(ignore_virtual=False, vp_stage=i)
             this_model = model_provider.provide(
-                pre_process=pre_process,
-                post_process=post_process,
-                vp_stage=i,
+                pre_process=pre_process, post_process=post_process, vp_stage=i
             )
             this_model.model_type = model_type
             model.append(this_model)
@@ -617,10 +623,7 @@ def _create_model(
                 post_process = (rank == (first_decoder_rank - 1)) or (rank == (world_size - 1))
             model = model_provider.provide()
         else:
-            model = model_provider.provide(
-                pre_process=pre_process,
-                post_process=post_process,
-            )
+            model = model_provider.provide(pre_process=pre_process, post_process=post_process)
         model.model_type = model_type
 
     if not isinstance(model, list):
@@ -661,7 +664,9 @@ def _ddp_wrap(
     if use_megatron_fsdp:
         DP = FullyShardedDataParallel
         if use_torch_fsdp2:
-            raise ValueError("Using use_megatron_fsdp and use_torch_fsdp2 at the same time is not supported.")
+            raise ValueError(
+                "Using use_megatron_fsdp and use_torch_fsdp2 at the same time is not supported."
+            )
     elif use_torch_fsdp2:
         DP = TorchFullyShardedDataParallel
     else:
@@ -696,12 +701,20 @@ def _print_num_params(model: list[MegatronModule]) -> None:
     Args:
         model: List of model modules to count parameters from
     """
-    if parallel_state.get_data_parallel_rank() == 0 and parallel_state.get_context_parallel_rank() == 0:
+    if (
+        parallel_state.get_data_parallel_rank() == 0
+        and parallel_state.get_context_parallel_rank() == 0
+    ):
         print(
             " > number of parameters on (tensor, pipeline) model parallel rank ({}, {}): {}".format(
                 parallel_state.get_tensor_model_parallel_rank(),
                 parallel_state.get_pipeline_model_parallel_rank(),
-                sum([sum([p.nelement() for p in model_module.parameters()]) for model_module in model]),
+                sum(
+                    [
+                        sum([p.nelement() for p in model_module.parameters()])
+                        for model_module in model
+                    ]
+                ),
             ),
             flush=True,
         )

@@ -15,7 +15,6 @@
 from flagscale.train.bridge.models.conversion.param_mapping import AutoMapping, GatedMLPMapping
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 
-
 try:
     import apex  # noqa: F401
 
@@ -52,7 +51,9 @@ def get_common_configs(hf_pretrained: PreTrainedCausalLM) -> dict:
     configs["q_lora_rank"] = hf_config.q_lora_rank
     configs["num_moe_experts"] = hf_config.n_routed_experts
     configs["moe_ffn_hidden_size"] = hf_config.moe_intermediate_size
-    configs["moe_shared_expert_intermediate_size"] = hf_config.moe_intermediate_size * hf_config.n_shared_experts
+    configs["moe_shared_expert_intermediate_size"] = (
+        hf_config.moe_intermediate_size * hf_config.n_shared_experts
+    )
     configs["moe_layer_freq"] = [0] * hf_config.first_k_dense_replace + [1] * (
         hf_config.num_hidden_layers - hf_config.first_k_dense_replace
     )

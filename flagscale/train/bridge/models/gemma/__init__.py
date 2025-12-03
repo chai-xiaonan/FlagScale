@@ -28,7 +28,6 @@ from flagscale.train.bridge.models.gemma.gemma_provider import (
     GemmaModelProvider7B,
 )
 
-
 __all__ = [
     "GemmaModelProvider",
     "GemmaModelProvider2B",

@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import torch
-from megatron.core.models.gpt.gpt_model import GPTModel
+
 from transformers import NemotronForCausalLM
+
+from megatron.core.models.gpt.gpt_model import GPTModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge
-from flagscale.train.bridge.models.conversion.param_mapping import (
-    AutoMapping,
-    QKVMapping,
-)
+from flagscale.train.bridge.models.conversion.param_mapping import AutoMapping, QKVMapping
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 from flagscale.train.bridge.models.nemotron.nemotron_provider import NemotronModelProvider
 
@@ -99,7 +98,7 @@ class NemotronBridge(MegatronModelBridge):
                     q="model.layers.*.self_attn.q_proj.weight",
                     k="model.layers.*.self_attn.k_proj.weight",
                     v="model.layers.*.self_attn.v_proj.weight",
-                ),
+                )
             ]
         )
 

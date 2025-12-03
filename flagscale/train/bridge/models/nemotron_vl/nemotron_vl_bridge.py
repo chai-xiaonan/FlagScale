@@ -14,13 +14,13 @@
 
 import torch
 
+from ..conversion.param_mapping import ConcatenatedQKVMapping
+from .modeling_nemotron_vl import NemotronVLModel
+from .nemotron_vl_provider import NemotronNano12Bv2VLModelProvider
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge
 from flagscale.train.bridge.models.conversion.param_mapping import AutoMapping, QKVMapping
 from flagscale.train.bridge.models.hf_pretrained.vlm import PreTrainedVLM
-from .modeling_nemotron_vl import NemotronVLModel
-from .nemotron_vl_provider import NemotronNano12Bv2VLModelProvider
-from ..conversion.param_mapping import ConcatenatedQKVMapping
 
 
 @MegatronModelBridge.register_bridge(source="NemotronH_Nano_VL_V2", target=NemotronVLModel)
@@ -39,11 +39,19 @@ class NemotronVLBridge(MegatronModelBridge):
             hidden_size=hf_config.llm_config.hidden_size,
             ffn_hidden_size=hf_config.llm_config.intermediate_size,
             num_attention_heads=hf_config.llm_config.num_attention_heads,
-            num_query_groups=getattr(hf_config.llm_config, "num_key_value_heads", hf_config.llm_config.num_attention_heads // 2),
+            num_query_groups=getattr(
+                hf_config.llm_config,
+                "num_key_value_heads",
+                hf_config.llm_config.num_attention_heads // 2,
+            ),
             init_method_std=hf_config.llm_config.initializer_range,
             layernorm_epsilon=getattr(hf_config.llm_config, "layer_norm_epsilon", 1e-5),
-            make_vocab_size_divisible_by=self.make_vocab_size_divisible_by(hf_config.llm_config.vocab_size),
-            share_embeddings_and_output_weights=getattr(hf_config.llm_config, "tie_word_embeddings", False),
+            make_vocab_size_divisible_by=self.make_vocab_size_divisible_by(
+                hf_config.llm_config.vocab_size
+            ),
+            share_embeddings_and_output_weights=getattr(
+                hf_config.llm_config, "tie_word_embeddings", False
+            ),
             vocab_size=hf_config.llm_config.vocab_size,
             seq_length=hf_config.llm_config.max_position_embeddings,
             fp16=(self.dtype_from_hf(hf_config, default=torch.float32) == torch.float16),
@@ -132,4 +140,3 @@ class NemotronVLBridge(MegatronModelBridge):
         AutoMapping.register_module_type("Conv1d", "column")
         AutoMapping.register_module_type("ExtendedRMSNorm", "column")
         return MegatronMappingRegistry(*mapping_list)
-

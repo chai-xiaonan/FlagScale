@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import torch
+
 from transformers import Qwen2_5_VLForConditionalGeneration
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
@@ -28,7 +29,9 @@ from flagscale.train.bridge.models.qwen_vl.modeling_qwen25_vl import Qwen25VLMod
 from flagscale.train.bridge.models.qwen_vl.qwen_vl_provider import Qwen25VLModelProvider
 
 
-@MegatronModelBridge.register_bridge(source=Qwen2_5_VLForConditionalGeneration, target=Qwen25VLModel)
+@MegatronModelBridge.register_bridge(
+    source=Qwen2_5_VLForConditionalGeneration, target=Qwen25VLModel
+)
 class Qwen25VLBridge(MegatronModelBridge):
     """
     Megatron Bridge for Qwen2.5-VL Conditional Generation.
@@ -102,10 +105,7 @@ class Qwen25VLBridge(MegatronModelBridge):
         # Add special mappings that require parameter concatenation/transformation
         mapping_list.extend(
             [
-                ReplicatedMapping(
-                    megatron_param="visual.**",
-                    hf_param="visual.**",
-                ),
+                ReplicatedMapping(megatron_param="visual.**", hf_param="visual.**"),
                 # QKV: Combine separate Q, K, V matrices into single QKV matrix
                 QKVMapping(
                     megatron_param="language_model.decoder.layers.*.self_attention.linear_qkv.weight",

@@ -15,11 +15,13 @@
 import contextlib
 import inspect
 import logging
+
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any, Callable, Literal, Optional, Union
 
 import torch
+
 from megatron.core import parallel_state
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
 from megatron.core.models.gpt.gpt_layer_specs import (
@@ -34,13 +36,15 @@ from flagscale.train.bridge.models.transformer_config import TransformerConfig
 from flagscale.train.bridge.utils import fusions
 from flagscale.train.bridge.utils.vocab_utils import calculate_padded_vocab_size
 
-
 logger = logging.getLogger(__name__)
 
 
 def transformer_engine_layer_spec(config: "GPTModelProvider") -> ModuleSpec:
     """Create a Transformer Engine layer specification based on the provided config."""
-    if "use_te_op_fuser" in inspect.signature(get_gpt_layer_with_transformer_engine_spec).parameters:
+    if (
+        "use_te_op_fuser"
+        in inspect.signature(get_gpt_layer_with_transformer_engine_spec).parameters
+    ):
         kwargs = {"use_te_op_fuser": config.use_transformer_engine_op_fuser}
     else:
         kwargs = {}
@@ -62,7 +66,9 @@ def transformer_engine_full_layer_spec(config: "GPTModelProvider") -> ModuleSpec
     Returns:
         ModuleSpec: Module specification for full TE layers
     """
-    from flagscale.train.bridge.models.gpt_full_te_layer_autocast_spec import get_gpt_full_te_layer_autocast_spec
+    from flagscale.train.bridge.models.gpt_full_te_layer_autocast_spec import (
+        get_gpt_full_te_layer_autocast_spec,
+    )
 
     return get_gpt_full_te_layer_autocast_spec(transformer_config=config)
 
@@ -132,7 +138,9 @@ class GPTModelProvider(TransformerConfig, ModelProviderMixin[MCoreGPTModel]):
 
     use_transformer_engine_full_layer_spec: bool = False
     use_transformer_engine_op_fuser: bool = False
-    transformer_layer_spec: Union[ModuleSpec, Callable[["GPTModelProvider"], ModuleSpec]] = default_layer_spec
+    transformer_layer_spec: Union[ModuleSpec, Callable[["GPTModelProvider"], ModuleSpec]] = (
+        default_layer_spec
+    )
 
     generation_config: Optional[Any] = None
 
@@ -164,8 +172,12 @@ class GPTModelProvider(TransformerConfig, ModelProviderMixin[MCoreGPTModel]):
     # Fusions
     masked_softmax_fusion: bool = field(default_factory=fusions.can_enable_masked_softmax_fusion)
     cross_entropy_loss_fusion: bool = True  # Generally beneficial, no specific dependencies
-    gradient_accumulation_fusion: bool = field(default_factory=fusions.can_enable_gradient_accumulation_fusion)
-    bias_activation_fusion: bool = False  # Disabled by default as it can interfere with certain architectures
+    gradient_accumulation_fusion: bool = field(
+        default_factory=fusions.can_enable_gradient_accumulation_fusion
+    )
+    bias_activation_fusion: bool = (
+        False  # Disabled by default as it can interfere with certain architectures
+    )
     persist_layer_norm: bool = False
     bias_dropout_fusion: bool = field(default_factory=fusions.can_enable_bias_dropout_fusion)
     apply_rope_fusion: bool = field(default_factory=fusions.can_enable_apply_rope_fusion)
@@ -197,9 +209,9 @@ class GPTModelProvider(TransformerConfig, ModelProviderMixin[MCoreGPTModel]):
             )
 
         vp_size = self.virtual_pipeline_model_parallel_size
-        is_pipeline_asymmetric = getattr(self, "account_for_embedding_in_pipeline_split", False) or getattr(
-            self, "account_for_loss_in_pipeline_split", False
-        )
+        is_pipeline_asymmetric = getattr(
+            self, "account_for_embedding_in_pipeline_split", False
+        ) or getattr(self, "account_for_loss_in_pipeline_split", False)
         is_pipeline_asymmetric |= (
             getattr(self, "num_layers_in_first_pipeline_stage", None)
             or getattr(self, "num_layers_in_last_pipeline_stage", None)
@@ -209,7 +221,9 @@ class GPTModelProvider(TransformerConfig, ModelProviderMixin[MCoreGPTModel]):
         )
         if vp_size and not is_flexible_pp_layout:
             p_size = self.pipeline_model_parallel_size
-            assert (self.num_layers // p_size) % vp_size == 0, (
+            assert (
+                self.num_layers // p_size
+            ) % vp_size == 0, (
                 "Make sure the number of model chunks is the same across all pipeline stages."
             )
 
@@ -291,7 +305,9 @@ class GPTModelProvider(TransformerConfig, ModelProviderMixin[MCoreGPTModel]):
         return model
 
 
-def mtp_block_spec(config: "GPTModelProvider", vp_stage: Optional[int] = None) -> Optional[ModuleSpec]:
+def mtp_block_spec(
+    config: "GPTModelProvider", vp_stage: Optional[int] = None
+) -> Optional[ModuleSpec]:
     """Pass in the MTP block spec if model has MTP layers.
 
     Args:

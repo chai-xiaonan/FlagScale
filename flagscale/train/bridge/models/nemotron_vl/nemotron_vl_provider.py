@@ -13,20 +13,27 @@
 # limitations under the License.
 
 import copy
+
 from dataclasses import dataclass
 from typing import Any, Optional
-from flagscale.train.bridge.models.nemotronh.nemotron_h_provider import NemotronNano12Bv2Provider
-from megatron.core.models.mamba.mamba_layer_specs import mamba_stack_spec
-from megatron.core.models.multimodal.llava_spec import decoder_model_with_transformer_engine_default_spec
-from megatron.core.models.multimodal.llava_model import LLaVAModel
-from megatron.core.jit import jit_fuser
+
 import torch
+
+from megatron.core.jit import jit_fuser
+from megatron.core.models.mamba.mamba_layer_specs import mamba_stack_spec
+from megatron.core.models.multimodal.llava_model import LLaVAModel
+from megatron.core.models.multimodal.llava_spec import (
+    decoder_model_with_transformer_engine_default_spec,
+)
 from megatron.core.models.vision.vit_layer_specs import get_vit_layer_with_transformer_engine_spec
+
+from flagscale.train.bridge.models.nemotronh.nemotron_h_provider import NemotronNano12Bv2Provider
 
 
 @jit_fuser
 def fast_gelu(x: torch.Tensor) -> torch.Tensor:
     return 0.5 * x * (1.0 + torch.tanh(x * 0.7978845608 * (1.0 + 0.044715 * x * x)))
+
 
 @dataclass
 class NemotronNano12Bv2VLModelProvider(NemotronNano12Bv2Provider):
@@ -110,10 +117,11 @@ class NemotronNano12Bv2VLModelProvider(NemotronNano12Bv2Provider):
         vision_proj_cfg.ffn_hidden_size = 20480
         vision_proj_cfg.bias_activation_fusion = False
 
-
         language_spec = mamba_stack_spec
         vision_spec = get_vit_layer_with_transformer_engine_spec()
-        vision_proj_spec = copy.deepcopy(language_spec.submodules.mlp_layer.submodules.mlp.submodules)
+        vision_proj_spec = copy.deepcopy(
+            language_spec.submodules.mlp_layer.submodules.mlp.submodules
+        )
 
         # ------------------------------------------------------------------
         # Instantiate LLaVA
@@ -164,4 +172,6 @@ class NemotronNano12Bv2VLModelProvider(NemotronNano12Bv2Provider):
 
     # Alias that NemotronVLModel relies on to create the LM component
     def provide_language_model(self, pre_process=None, post_process=None, vp_stage=None):
-        return super().provide(pre_process=pre_process, post_process=post_process, vp_stage=vp_stage)
+        return super().provide(
+            pre_process=pre_process, post_process=post_process, vp_stage=vp_stage
+        )

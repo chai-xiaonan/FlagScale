@@ -23,16 +23,22 @@ multiple threads try to download and cache the same model simultaneously.
 import hashlib
 import os
 import time
+
 from pathlib import Path
 from typing import Union
 
 import filelock
+
 from transformers import AutoConfig
 from transformers.configuration_utils import PretrainedConfig
 
 
 def safe_load_config_with_retry(
-    path: Union[str, Path], trust_remote_code: bool = False, max_retries: int = 3, base_delay: float = 1.0, **kwargs
+    path: Union[str, Path],
+    trust_remote_code: bool = False,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    **kwargs,
 ) -> PretrainedConfig:
     """
     Thread-safe and process-safe configuration loading with retry logic.
@@ -91,12 +97,16 @@ def safe_load_config_with_retry(
             if lock_dir:
                 lock_file = Path(lock_dir) / f".megatron_config_lock_{path_hash}"
             else:
-                lock_file = Path.home() / ".cache" / "huggingface" / f".megatron_config_lock_{path_hash}"
+                lock_file = (
+                    Path.home() / ".cache" / "huggingface" / f".megatron_config_lock_{path_hash}"
+                )
 
             lock_file.parent.mkdir(parents=True, exist_ok=True)
 
             with filelock.FileLock(str(lock_file) + ".lock", timeout=60):
-                return AutoConfig.from_pretrained(path, trust_remote_code=trust_remote_code, **kwargs)
+                return AutoConfig.from_pretrained(
+                    path, trust_remote_code=trust_remote_code, **kwargs
+                )
 
         except Exception as e:
             last_exception = e

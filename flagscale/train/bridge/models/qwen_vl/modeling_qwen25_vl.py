@@ -13,20 +13,23 @@
 # limitations under the License.
 
 import types
+
 from typing import Optional
 
 import torch
 import transformers
-from megatron.core.inference.contexts import BaseInferenceContext
-from megatron.core.packed_seq_params import PackedSeqParams
-from megatron.core.tensor_parallel import scatter_to_sequence_parallel_region
-from megatron.core.transformer.module import MegatronModule
+
 from packaging.version import Version as PkgVersion
 from torch import Tensor
 from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import (
     Qwen2_5_VisionTransformerPretrainedModel,
     Qwen2_5_VLModel,
 )
+
+from megatron.core.inference.contexts import BaseInferenceContext
+from megatron.core.packed_seq_params import PackedSeqParams
+from megatron.core.tensor_parallel import scatter_to_sequence_parallel_region
+from megatron.core.transformer.module import MegatronModule
 
 from flagscale.train.bridge.models.gpt_provider import GPTModelProvider
 from flagscale.train.bridge.utils.common_utils import hook_hf_module_setattr_for_tp_grad_sync
@@ -100,7 +103,9 @@ class Qwen25VLModel(MegatronModule):
         self.vp_stage = vp_stage
 
         if pre_process:
-            self.visual = Qwen2_5_VisionTransformerPretrainedModel._from_config(config.vision_config)
+            self.visual = Qwen2_5_VisionTransformerPretrainedModel._from_config(
+                config.vision_config
+            )
             # Ensure HF visual tower params are marked for TP grad sync and future assignments are hooked.
             hook_hf_module_setattr_for_tp_grad_sync(self.visual)
         self.language_model = self.config.provide_language_model(
@@ -109,7 +114,9 @@ class Qwen25VLModel(MegatronModule):
 
         # Finalize grad will need these to be bind with module
         self.share_embeddings_and_output_weights = config.share_embeddings_and_output_weights
-        self.shared_embedding_or_output_weight = self.language_model.shared_embedding_or_output_weight
+        self.shared_embedding_or_output_weight = (
+            self.language_model.shared_embedding_or_output_weight
+        )
 
         # Bind methods from HF's Qwen2_5_VLModel to this instance
         # get_placeholder_mask is only available in transformers 4.55+
@@ -165,11 +172,15 @@ class Qwen25VLModel(MegatronModule):
                     input_ids=input_ids, position_ids=None
                 )  # [decoder_seq_len, b, h_language]
 
-                inputs_embeds = inputs_embeds.transpose(1, 0).contiguous()  # [b, decoder_seq_len, h_language]
+                inputs_embeds = inputs_embeds.transpose(
+                    1, 0
+                ).contiguous()  # [b, decoder_seq_len, h_language]
 
             if pixel_values is not None:
                 image_embeds = self.get_image_features(pixel_values, image_grid_thw)
-                image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+                image_embeds = torch.cat(image_embeds, dim=0).to(
+                    inputs_embeds.device, inputs_embeds.dtype
+                )
                 image_mask, _ = self.get_placeholder_mask(
                     input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds
                 )
@@ -177,7 +188,9 @@ class Qwen25VLModel(MegatronModule):
 
             if pixel_values_videos is not None:
                 video_embeds = self.get_video_features(pixel_values_videos, video_grid_thw)
-                video_embeds = torch.cat(video_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+                video_embeds = torch.cat(video_embeds, dim=0).to(
+                    inputs_embeds.device, inputs_embeds.dtype
+                )
                 _, video_mask = self.get_placeholder_mask(
                     input_ids, inputs_embeds=inputs_embeds, video_features=video_embeds
                 )
@@ -209,7 +222,9 @@ class Qwen25VLModel(MegatronModule):
         )
         return outputs
 
-    def freeze(self, freeze_language_model: bool, freeze_vision_model: bool, freeze_vision_projection: bool):
+    def freeze(
+        self, freeze_language_model: bool, freeze_vision_model: bool, freeze_vision_projection: bool
+    ):
         """Freeze model modules.
 
         Make specific modules non-trainable by setting requires_grad to False.
@@ -221,7 +236,11 @@ class Qwen25VLModel(MegatronModule):
         """
         modules = []
 
-        if freeze_language_model and hasattr(self, "language_model") and self.language_model is not None:
+        if (
+            freeze_language_model
+            and hasattr(self, "language_model")
+            and self.language_model is not None
+        ):
             modules.append(self.language_model)
 
         if freeze_vision_model and hasattr(self, "visual") and self.visual is not None:

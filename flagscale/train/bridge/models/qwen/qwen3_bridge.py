@@ -13,8 +13,10 @@
 # limitations under the License.
 
 import torch
-from megatron.core.models.gpt.gpt_model import GPTModel
+
 from transformers import Qwen3ForCausalLM
+
+from megatron.core.models.gpt.gpt_model import GPTModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge

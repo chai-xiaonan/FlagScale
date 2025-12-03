@@ -14,6 +14,7 @@
 
 import copy
 import logging
+
 from dataclasses import dataclass
 from typing import Any, Callable, Literal, Optional, Union
 
@@ -24,11 +25,12 @@ from flagscale.train.bridge.models.model_provider import ModelProviderMixin
 from flagscale.train.bridge.models.transformer_config import TransformerConfig
 from flagscale.train.bridge.utils.vocab_utils import calculate_padded_vocab_size
 
-
 logger = logging.getLogger(__name__)
 
 
-def transformer_engine_layer_spec(encoder_config: "T5ModelProvider", decoder_config: "T5ModelProvider") -> ModuleSpec:
+def transformer_engine_layer_spec(
+    encoder_config: "T5ModelProvider", decoder_config: "T5ModelProvider"
+) -> ModuleSpec:
     """Spec for T5 when using transformer_engine mcore implementation"""
     from megatron.core.models.T5.t5_spec import (
         get_t5_decoder_with_transformer_engine_block_spec,
@@ -41,7 +43,9 @@ def transformer_engine_layer_spec(encoder_config: "T5ModelProvider", decoder_con
     return [en_block_spec, de_block_spec]
 
 
-def local_layer_spec(encoder_config: "T5ModelProvider", decoder_config: "T5ModelProvider") -> ModuleSpec:
+def local_layer_spec(
+    encoder_config: "T5ModelProvider", decoder_config: "T5ModelProvider"
+) -> ModuleSpec:
     """Spec for T5 when using local mcore implementation"""
     from megatron.core.models.T5.t5_spec import (
         get_t5_decoder_with_local_block_spec,
@@ -103,7 +107,9 @@ class T5ModelProvider(TransformerConfig, ModelProviderMixin[MCoreT5Model]):
         vp_size = self.virtual_pipeline_model_parallel_size
         if vp_size:
             p_size = self.pipeline_model_parallel_size
-            assert (self.num_layers // p_size) % vp_size == 0, (
+            assert (
+                self.num_layers // p_size
+            ) % vp_size == 0, (
                 "Make sure the number of model chunks is the same across all pipeline stages."
             )
 
@@ -112,12 +118,16 @@ class T5ModelProvider(TransformerConfig, ModelProviderMixin[MCoreT5Model]):
         encoder_config = copy.deepcopy(self)
         encoder_config.num_layers = self.encoder_num_layers
         if self.pipeline_model_parallel_size > 1:
-            assert self.encoder_pipeline_model_parallel_size > 0, "Need to know how to shard the encoder & decoder."
+            assert (
+                self.encoder_pipeline_model_parallel_size > 0
+            ), "Need to know how to shard the encoder & decoder."
             encoder_config.pipeline_model_parallel_size = self.encoder_pipeline_model_parallel_size
 
         transformer_layer_spec = self.transformer_layer_spec
         if not isinstance(transformer_layer_spec, ModuleSpec):
-            transformer_layer_spec = transformer_layer_spec(encoder_config=encoder_config, decoder_config=self)
+            transformer_layer_spec = transformer_layer_spec(
+                encoder_config=encoder_config, decoder_config=self
+            )
 
         assert self.vocab_size is not None, "vocab_size must be configured before calling provide()"
         if self.should_pad_vocab:

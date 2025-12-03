@@ -27,7 +27,6 @@ from flagscale.train.bridge.models.conversion.param_mapping import (
 )
 from flagscale.train.bridge.models.conversion.utils import weights_verification_table
 
-
 __all__ = [
     "AutoBridge",
     "MegatronMappingRegistry",

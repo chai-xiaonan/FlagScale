@@ -15,14 +15,17 @@
 from typing import Optional
 
 import torch
+
 from torch import Tensor
 
-from megatron.core.transformer.module import MegatronModule
 from megatron.core.models.multimodal.llava_model import LLaVAModel
+from megatron.core.transformer.module import MegatronModule
 
 # Local imports are intentionally placed at the bottom to avoid circular deps
 if True:  # noqa: SIM102 – block to allow conditional import without else
-    from .nemotron_vl_provider import NemotronNano12Bv2VLModelProvider  # pylint: disable=cyclic-import
+    from .nemotron_vl_provider import (  # pylint: disable=cyclic-import
+        NemotronNano12Bv2VLModelProvider,
+    )
 
 
 class NemotronVLModel(MegatronModule):

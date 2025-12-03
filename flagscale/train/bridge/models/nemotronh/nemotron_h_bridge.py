@@ -15,6 +15,7 @@
 import logging
 
 import torch
+
 from megatron.core.models.mamba import MambaModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
@@ -22,7 +23,6 @@ from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelB
 from flagscale.train.bridge.models.conversion.param_mapping import AutoMapping, QKVMapping
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 from flagscale.train.bridge.models.nemotronh.nemotron_h_provider import NemotronHModelProvider
-
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,9 @@ class NemotronHBridge(MegatronModelBridge):
         )
 
     def mapping_registry(self) -> MegatronMappingRegistry:
-        logger.warning("WARNING: NemotronHBridge is currently experimental and may not work with tensor parallel > 1.")
+        logger.warning(
+            "WARNING: NemotronHBridge is currently experimental and may not work with tensor parallel > 1."
+        )
         # Return MegatronMappingRegistry containing parameter mappings from Megatron to HF format
         # First create simple 1:1 parameter mappings using a dictionary for readability
 
@@ -119,7 +121,7 @@ class NemotronHBridge(MegatronModelBridge):
                     q="backbone.layers.*.mixer.q_proj.weight",
                     k="backbone.layers.*.mixer.k_proj.weight",
                     v="backbone.layers.*.mixer.v_proj.weight",
-                ),
+                )
             ]
         )
 

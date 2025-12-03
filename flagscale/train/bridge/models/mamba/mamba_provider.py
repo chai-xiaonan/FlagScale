@@ -14,13 +14,17 @@
 
 import logging
 import warnings
+
 from dataclasses import dataclass
 from typing import Callable, Literal, Optional, Union
 
 import torch
+
 from megatron.core import parallel_state
 from megatron.core.models.mamba import MambaModel as MCoreMambaModel
-from megatron.core.models.mamba.mamba_layer_specs import mamba_stack_spec as default_mamba_stack_spec
+from megatron.core.models.mamba.mamba_layer_specs import (
+    mamba_stack_spec as default_mamba_stack_spec,
+)
 from megatron.core.transformer import ModuleSpec
 from megatron.core.transformer.enums import AttnBackend
 
@@ -28,7 +32,6 @@ from flagscale.train.bridge.models.model_provider import ModelProviderMixin
 from flagscale.train.bridge.models.transformer_config import TransformerConfig
 from flagscale.train.bridge.utils.common_utils import get_rank_safe
 from flagscale.train.bridge.utils.vocab_utils import calculate_padded_vocab_size
-
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +94,9 @@ class MambaModelProvider(TransformerConfig, ModelProviderMixin[MCoreMambaModel])
         if not isinstance(mamba_stack_spec, ModuleSpec):
             mamba_stack_spec = mamba_stack_spec()
 
-        assert getattr(self, "virtual_pipeline_model_parallel_size", None) is None and vp_stage is None, (
+        assert (
+            getattr(self, "virtual_pipeline_model_parallel_size", None) is None and vp_stage is None
+        ), (
             "Virtual pipeline model parallelism is temporarily unsupported in SSM/Mamaba "
             "models due to upstream MCore MambaModel API dependency"
         )

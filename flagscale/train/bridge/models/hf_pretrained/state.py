@@ -15,21 +15,13 @@
 import fnmatch
 import json
 import re
+
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Mapping
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Pattern,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import Dict, Iterable, List, Optional, Pattern, Tuple, Union, overload
 
 import torch
 
@@ -152,7 +144,9 @@ class StateDict(Mapping[str, torch.Tensor]):
     @overload
     def __getitem__(self, key: Pattern) -> Dict[str, torch.Tensor]: ...
 
-    def __getitem__(self, key: Union[str, List[str], Pattern]) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+    def __getitem__(
+        self, key: Union[str, List[str], Pattern]
+    ) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
         """
         Accesses state dict entries using various key types.
 
@@ -491,6 +485,7 @@ class SafeTensorsStateSource(StateSource):
 
         # If no index, scan the directory.
         import os
+
         from glob import glob as file_glob
 
         from safetensors import safe_open
@@ -536,10 +531,7 @@ class SafeTensorsStateSource(StateSource):
             return Path(
                 snapshot_download(
                     repo_id=str(model_name_or_path),
-                    allow_patterns=[
-                        "*.safetensors",
-                        "model.safetensors.index.json",
-                    ],
+                    allow_patterns=["*.safetensors", "model.safetensors.index.json"],
                     # Ignore other large files.
                     ignore_patterns=["*.bin", "*.pt", "*.pth"],
                 )
@@ -566,7 +558,9 @@ class SafeTensorsStateSource(StateSource):
         if not all_keys:
             safetensor_files = file_glob(str(self.path / "*.safetensors"))
             if not safetensor_files and not key_to_filename_map:
-                raise FileNotFoundError(f"No .safetensors files or index found in {self.model_name_or_path}")
+                raise FileNotFoundError(
+                    f"No .safetensors files or index found in {self.model_name_or_path}"
+                )
             for safetensor_file in safetensor_files:
                 with safe_open(safetensor_file, framework="pt", device="cpu") as f:
                     all_keys.update(f.keys())
@@ -619,7 +613,9 @@ class SafeTensorsStateSource(StateSource):
                             remaining_keys.remove(key)
 
         if remaining_keys:
-            raise KeyError(f"Keys not found in safetensors from {self.model_name_or_path}: {remaining_keys}")
+            raise KeyError(
+                f"Keys not found in safetensors from {self.model_name_or_path}: {remaining_keys}"
+            )
 
         return loaded_tensors
 
@@ -638,6 +634,7 @@ class SafeTensorsStateSource(StateSource):
             True if a matching key is found, False otherwise.
         """
         import fnmatch
+
         from glob import glob as file_glob
 
         from safetensors import safe_open
@@ -667,7 +664,10 @@ class SafeTensorsStateSource(StateSource):
         return False
 
     def save_generator(
-        self, generator: Iterable[Tuple[str, torch.Tensor]], output_path: Union[str, Path], strict: bool = True
+        self,
+        generator: Iterable[Tuple[str, torch.Tensor]],
+        output_path: Union[str, Path],
+        strict: bool = True,
     ):
         """
         Saves tensors from a generator to `.safetensors` files, preserving the
@@ -735,7 +735,9 @@ class SafeTensorsStateSource(StateSource):
                         "To ignore, set strict=False."
                     )
                 else:
-                    print(f"Warning: tensor '{name}' from generator not found in original model structure. Skipping.")
+                    print(
+                        f"Warning: tensor '{name}' from generator not found in original model structure. Skipping."
+                    )
                     continue
 
             buffered_tensors[name] = tensor
@@ -778,7 +780,11 @@ class SafeTensorsStateSource(StateSource):
             if not strict:
                 for filename in list(files_to_save.keys()):
                     keys_for_file = files_to_save[filename]
-                    tensors_to_save = {key: buffered_tensors[key] for key in keys_for_file if key in buffered_tensors}
+                    tensors_to_save = {
+                        key: buffered_tensors[key]
+                        for key in keys_for_file
+                        if key in buffered_tensors
+                    }
                     # missing_keys = set(keys_for_file) - tensors_to_save.keys()
                     # if missing_keys:
                     #     print(f"  - {filename}: missing {len(missing_keys)} tensors:")
@@ -786,14 +792,13 @@ class SafeTensorsStateSource(StateSource):
                     #         print(f"    - {key}")
                     output_file_path = output_path / filename
                     save_file(tensors_to_save, output_file_path)
-                    
+
                     # Free memory by removing saved tensors from the buffer.
                     for key in tensors_to_save.keys():
                         del buffered_tensors[key]
 
                     all_saved_keys.update(keys_for_file)
                     del files_to_save[filename]
-
 
         if buffered_tensors:
             print(
@@ -839,7 +844,9 @@ class SafeTensorsStateSource(StateSource):
 
     @staticmethod
     @lru_cache(maxsize=None)
-    def _cached_get_key_to_filename_map(model_name_or_path: Union[str, Path]) -> Optional[Dict[str, str]]:
+    def _cached_get_key_to_filename_map(
+        model_name_or_path: Union[str, Path]
+    ) -> Optional[Dict[str, str]]:
         """Static, cached method to get the key-to-filename map."""
         index_file = Path(model_name_or_path) / "model.safetensors.index.json"
         if index_file.exists():

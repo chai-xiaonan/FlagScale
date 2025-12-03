@@ -13,8 +13,10 @@
 # limitations under the License.
 
 import torch
-from megatron.core.models.gpt.gpt_model import GPTModel
+
 from transformers import Gemma2ForCausalLM
+
+from megatron.core.models.gpt.gpt_model import GPTModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge
@@ -25,7 +27,6 @@ from flagscale.train.bridge.models.conversion.param_mapping import (
 )
 from flagscale.train.bridge.models.gemma.gemma2_provider import Gemma2ModelProvider
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
-
 
 # Register custom Gemma2 modules for AutoMapping
 AutoMapping.register_module_type("TERowParallelLinearLayerNorm", "row")

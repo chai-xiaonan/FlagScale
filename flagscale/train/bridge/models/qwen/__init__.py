@@ -40,7 +40,6 @@ from flagscale.train.bridge.models.qwen.qwen_provider import (
     Qwen25ModelProvider500M,
 )
 
-
 __all__ = [
     "Qwen2ModelProvider",
     "Qwen2ModelProvider500M",

@@ -31,7 +31,6 @@ from flagscale.train.bridge.models.mamba.mamba_provider import (
     NVIDIAMambaProvider8B,
 )
 
-
 __all__ = [
     "MambaModelProvider",
     "MambaModelProvider1P3B",

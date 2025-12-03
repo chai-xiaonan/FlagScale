@@ -21,21 +21,13 @@ behavior for different types using the `impl` decorator.
 from functools import _find_impl  # type: ignore
 from typing import Any, Callable, Dict, Optional, TypeVar
 
-
 _SignatureType = TypeVar("_SignatureType", bound=Callable)
 
 
 class _Dispatch:
     """Internal dispatch representation with type-based routing logic."""
 
-    __slots__ = (
-        "_signature",
-        "_name",
-        "_exact_types",
-        "_dispatch_cache",
-        "_doc",
-        "_module",
-    )
+    __slots__ = ("_signature", "_name", "_exact_types", "_dispatch_cache", "_doc", "_module")
 
     def __init__(self, signature: Callable) -> None:
         self._signature = signature
@@ -160,7 +152,9 @@ class _Dispatch:
         # Add regular implementations
         for typ, impl in self._exact_types.items():
             if isinstance(typ, tuple):
-                type_name = f"({', '.join(t.__name__ if hasattr(t, '__name__') else str(t) for t in typ)})"
+                type_name = (
+                    f"({', '.join(t.__name__ if hasattr(t, '__name__') else str(t) for t in typ)})"
+                )
             else:
                 type_name = typ.__name__ if hasattr(typ, "__name__") else str(typ)
             impl_loc = self._format_location(impl)
@@ -250,13 +244,19 @@ class _Dispatch:
             )
             type_name_for_header = f"tuple of types ({type_names_str})"
 
-            suggestion_names = ", ".join(t.__name__ if hasattr(t, "__name__") else str(t) for t in instance_types)
+            suggestion_names = ", ".join(
+                t.__name__ if hasattr(t, "__name__") else str(t) for t in instance_types
+            )
             type_name_for_suggestion = f"({suggestion_names})"
             type_name_for_func = "tuple"
             instance_type_hint = f"Tuple[{', '.join(t.__name__ for t in instance_types)}]"
         else:
             instance_type = instance if isinstance(instance, type) else type(instance)
-            qualname = instance_type.__qualname__ if hasattr(instance_type, "__qualname__") else str(instance_type)
+            qualname = (
+                instance_type.__qualname__
+                if hasattr(instance_type, "__qualname__")
+                else str(instance_type)
+            )
             type_name_for_header = f"type '{qualname}'"
             type_name_for_suggestion = (
                 instance_type.__name__ if hasattr(instance_type, "__name__") else str(instance_type)
@@ -277,10 +277,7 @@ class _Dispatch:
             lines.append("Available implementations:")
 
             # Add registered types
-            sorted_keys = sorted(
-                self._exact_types.keys(),
-                key=str,
-            )
+            sorted_keys = sorted(self._exact_types.keys(), key=str)
             for typ in sorted_keys:
                 if isinstance(typ, tuple):
                     type_display = f"({', '.join(t.__name__ if hasattr(t, '__name__') else str(t) for t in typ)})"

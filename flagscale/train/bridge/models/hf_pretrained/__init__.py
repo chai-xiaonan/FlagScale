@@ -15,5 +15,4 @@
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 from flagscale.train.bridge.models.hf_pretrained.vlm import PreTrainedVLM
 
-
 __all__ = ["PreTrainedCausalLM", "PreTrainedVLM"]

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
@@ -20,7 +21,6 @@ import torch
 
 from flagscale.train.bridge.models.gpt_provider import GPTModelProvider
 from flagscale.train.bridge.utils import fusions
-
 
 logger = logging.getLogger(__name__)
 

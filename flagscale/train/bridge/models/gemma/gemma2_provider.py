@@ -13,13 +13,21 @@
 # limitations under the License.
 
 import math
+
 from dataclasses import dataclass
 from typing import Callable, Optional, Union
 
 import torch
+
+from torch import Tensor
+
 from megatron.core import parallel_state, tensor_parallel
 from megatron.core.activations import fast_gelu
-from megatron.core.extensions.transformer_engine import TELayerNormColumnParallelLinear, TENorm, TERowParallelLinear
+from megatron.core.extensions.transformer_engine import (
+    TELayerNormColumnParallelLinear,
+    TENorm,
+    TERowParallelLinear,
+)
 from megatron.core.fusions.fused_bias_dropout import get_bias_dropout_add
 from megatron.core.fusions.fused_softmax import FusedScaleMaskSoftmax
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
@@ -37,7 +45,6 @@ from megatron.core.transformer.enums import AttnMaskType
 from megatron.core.transformer.mlp import MLP, MLPSubmodules
 from megatron.core.transformer.utils import attention_mask_func
 from megatron.core.utils import divide
-from torch import Tensor
 
 from flagscale.train.bridge.models.gemma.modules import EmbeddingScalingMixin, extend_instance
 from flagscale.train.bridge.models.gpt_provider import GPTModelProvider
@@ -71,9 +78,9 @@ class Gemma2DotProductAttention(MegatronModule):
 
         self.config: TransformerConfig = config
 
-        assert self.config.context_parallel_size == 1, (
-            "Context parallelism is only supported by TEDotProductAttention!"
-        )
+        assert (
+            self.config.context_parallel_size == 1
+        ), "Context parallelism is only supported by TEDotProductAttention!"
 
         self.layer_number = max(1, layer_number)
 
@@ -131,9 +138,9 @@ class Gemma2DotProductAttention(MegatronModule):
         Modified from mcore.transformer.dot_product_attention to support Gemma2-specific
         final_logit_softcapping.
         """
-        assert packed_seq_params is None, (
-            "Packed sequence is not supported by DotProductAttention.Please use TEDotProductAttention instead."
-        )
+        assert (
+            packed_seq_params is None
+        ), "Packed sequence is not supported by DotProductAttention.Please use TEDotProductAttention instead."
 
         # ===================================
         # Raw attention scores. [b, n/p, s, s]
@@ -154,12 +161,7 @@ class Gemma2DotProductAttention(MegatronModule):
             )
 
         # [b, np, sq, sk]
-        output_size = (
-            query.size(1),
-            query.size(2),
-            query.size(0),
-            key.size(0),
-        )
+        output_size = (query.size(1), query.size(2), query.size(0), key.size(0))
 
         # [sq, b, np, hn] -> [sq, b * np, hn]
         # This will be a simple view when doing normal attention, but in group query attention
@@ -171,9 +173,7 @@ class Gemma2DotProductAttention(MegatronModule):
 
         # preallocting input tensor: [b * np, sq, sk]
         matmul_input_buffer = parallel_state.get_global_memory_buffer().get_tensor(
-            (output_size[0] * output_size[1], output_size[2], output_size[3]),
-            query.dtype,
-            "mpu",
+            (output_size[0] * output_size[1], output_size[2], output_size[3]), query.dtype, "mpu"
         )
 
         # Raw attention scores. [b * np, sq, sk]
@@ -218,12 +218,7 @@ class Gemma2DotProductAttention(MegatronModule):
         # [sk, b, np, hn] --> [b, np, sq, hn]
 
         # context layer shape: [b, np, sq, hn]
-        output_size = (
-            value.size(1),
-            value.size(2),
-            query.size(0),
-            value.size(3),
-        )
+        output_size = (value.size(1), value.size(2), query.size(0), value.size(3))
 
         # change view [sk, b * np, hn]
         value = value.view(value.size(0), output_size[0] * output_size[1], -1)
@@ -249,20 +244,8 @@ class Gemma2DotProductAttention(MegatronModule):
 class TERowParallelLinearLayerNorm(TERowParallelLinear):
     """Modified From TERowParallelLinear with an additional Post-LN."""
 
-    def __init__(
-        self,
-        input_size: int,
-        output_size: int,
-        *,
-        config: TransformerConfig,
-        **kwargs,
-    ):
-        super().__init__(
-            input_size,
-            output_size,
-            config=config,
-            **kwargs,
-        )
+    def __init__(self, input_size: int, output_size: int, *, config: TransformerConfig, **kwargs):
+        super().__init__(input_size, output_size, config=config, **kwargs)
         self.post_layernorm = TENorm(config, output_size)
 
     def forward(self, x):
@@ -357,7 +340,9 @@ class Gemma2ModelProvider(GPTModelProvider):
     vocab_size: int = 256000
     gradient_accumulation_fusion: bool = False
 
-    transformer_layer_spec: Union[ModuleSpec, Callable[["GPTModelProvider"], ModuleSpec]] = gemma2_layer_spec
+    transformer_layer_spec: Union[ModuleSpec, Callable[["GPTModelProvider"], ModuleSpec]] = (
+        gemma2_layer_spec
+    )
 
     query_pre_attn_scalar: int = 224
     attn_logit_softcapping: float = 50.0
@@ -374,7 +359,9 @@ class Gemma2ModelProvider(GPTModelProvider):
         Returns:
             MCoreGPTModel: Configured Megatron Core GPT model instance
         """
-        model = super().provide(pre_process=pre_process, post_process=post_process, vp_stage=vp_stage)
+        model = super().provide(
+            pre_process=pre_process, post_process=post_process, vp_stage=vp_stage
+        )
 
         # Apply Embedding Scaling for Gemma2: sqrt(hidden_size)
         if parallel_state.is_pipeline_first_stage(ignore_virtual=False, vp_stage=vp_stage):

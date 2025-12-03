@@ -15,15 +15,12 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from megatron.core.models.gpt import GPTModel as MCoreGPTModel
 from transformers.models.qwen2_5_vl.modeling_qwen2_5_vl import Qwen2_5_VLVisionConfig
 
-from flagscale.train.bridge.models import (
-    Qwen2ModelProvider,
-)
+from megatron.core.models.gpt import GPTModel as MCoreGPTModel
 
 from .modeling_qwen25_vl import Qwen25VLModel
-
+from flagscale.train.bridge.models import Qwen2ModelProvider
 
 # =============================================================================
 # Qwen 2.5 VL Model Providers
@@ -61,7 +58,9 @@ class Qwen25VLModelProvider(Qwen2ModelProvider):
     freeze_vision_projection: bool = False
 
     def provide(self, pre_process=None, post_process=None, vp_stage=None) -> Qwen25VLModel:
-        model = Qwen25VLModel(self, pre_process=pre_process, post_process=post_process, vp_stage=vp_stage)
+        model = Qwen25VLModel(
+            self, pre_process=pre_process, post_process=post_process, vp_stage=vp_stage
+        )
 
         # Apply freeze options if any are enabled
         if self.freeze_language_model or self.freeze_vision_model or self.freeze_vision_projection:
@@ -73,5 +72,9 @@ class Qwen25VLModelProvider(Qwen2ModelProvider):
 
         return model
 
-    def provide_language_model(self, pre_process=None, post_process=None, vp_stage=None) -> MCoreGPTModel:
-        return super().provide(pre_process=pre_process, post_process=post_process, vp_stage=vp_stage)
+    def provide_language_model(
+        self, pre_process=None, post_process=None, vp_stage=None
+    ) -> MCoreGPTModel:
+        return super().provide(
+            pre_process=pre_process, post_process=post_process, vp_stage=vp_stage
+        )

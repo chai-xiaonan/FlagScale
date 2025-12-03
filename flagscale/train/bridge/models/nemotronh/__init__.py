@@ -29,7 +29,6 @@ from flagscale.train.bridge.models.nemotronh.nemotron_h_provider import (
     NemotronNanoModelProvider12Bv2,
 )
 
-
 __all__ = [
     "NemotronHModelProvider",
     "NemotronHModelProvider4B",

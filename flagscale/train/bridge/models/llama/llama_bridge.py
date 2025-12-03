@@ -15,8 +15,10 @@
 from functools import partial
 
 import torch
-from megatron.core.models.gpt.gpt_model import GPTModel
+
 from transformers import LlamaForCausalLM
+
+from megatron.core.models.gpt.gpt_model import GPTModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge
@@ -26,7 +28,10 @@ from flagscale.train.bridge.models.conversion.param_mapping import (
     QKVMapping,
 )
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
-from flagscale.train.bridge.models.llama.llama_provider import Llama31ModelProvider, LlamaModelProvider
+from flagscale.train.bridge.models.llama.llama_provider import (
+    Llama31ModelProvider,
+    LlamaModelProvider,
+)
 
 
 @MegatronModelBridge.register_bridge(source=LlamaForCausalLM, target=GPTModel)
@@ -50,7 +55,9 @@ class LlamaBridge(MegatronModelBridge):
             and hf_config.rope_scaling.get("rope_type") == "llama3"
         ):
             # Apply Llama3.1 customize rope scaling
-            cls = partial(Llama31ModelProvider, scale_factor=hf_config.rope_scaling.get("factor", 8.0))
+            cls = partial(
+                Llama31ModelProvider, scale_factor=hf_config.rope_scaling.get("factor", 8.0)
+            )
         else:
             cls = LlamaModelProvider
 

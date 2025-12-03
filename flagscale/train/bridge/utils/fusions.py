@@ -23,7 +23,6 @@ import os
 
 from megatron.core.transformer.transformer_config import TransformerConfig
 
-
 logger = logging.getLogger(__name__)
 
 # Control whether to log warnings when fusions are disabled
@@ -40,6 +39,7 @@ def can_enable_apply_rope_fusion() -> bool:
     # Check for Transformer Engine availability
     try:
         import transformer_engine  # noqa: F401
+
         from megatron.core.utils import get_te_version, is_te_min_version
 
         if not is_te_min_version("2.2.0.dev0"):
@@ -51,7 +51,9 @@ def can_enable_apply_rope_fusion() -> bool:
             return False
     except ImportError:
         if LOG_FUSION_DISABLE:
-            logger.warning("apply_rope_fusion requires Transformer Engine but it is not installed. Fusion disabled.")
+            logger.warning(
+                "apply_rope_fusion requires Transformer Engine but it is not installed. Fusion disabled."
+            )
         return False
 
     # Check for RoPE fusion kernel availability
@@ -63,7 +65,9 @@ def can_enable_apply_rope_fusion() -> bool:
 
         if fused_apply_rotary_pos_emb is None and fused_apply_rotary_pos_emb_thd is None:
             if LOG_FUSION_DISABLE:
-                logger.warning("apply_rope_fusion kernels are not available in megatron.core. Fusion disabled.")
+                logger.warning(
+                    "apply_rope_fusion kernels are not available in megatron.core. Fusion disabled."
+                )
             return False
         return True
     except ImportError:
@@ -101,7 +105,9 @@ def can_enable_bias_dropout_fusion() -> bool:
         bool: True if bias dropout fusion is available.
     """
     try:
-        from megatron.core.fusions.fused_bias_dropout import bias_dropout_add_fused_train  # noqa: F401
+        from megatron.core.fusions.fused_bias_dropout import (  # noqa: F401
+            bias_dropout_add_fused_train,
+        )
 
         return True
     except ImportError:

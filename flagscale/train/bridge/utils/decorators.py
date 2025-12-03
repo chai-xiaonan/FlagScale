@@ -15,8 +15,8 @@
 import functools
 import logging
 import warnings
-from typing import Any, Callable, TypeVar
 
+from typing import Any, Callable, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,7 @@ R = TypeVar("R")
 
 def experimental_fn(func: Callable[..., R]) -> Callable[..., R]:
     """Decorator to mark a function as experimental and issue a warning upon its call."""
-    warning_message = (
-        f"Function '{func.__name__}' is experimental. APIs in this module are subject to change without notice."
-    )
+    warning_message = f"Function '{func.__name__}' is experimental. APIs in this module are subject to change without notice."
 
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> R:

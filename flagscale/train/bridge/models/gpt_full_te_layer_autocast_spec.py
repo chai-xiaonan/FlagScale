@@ -17,15 +17,20 @@ from typing import Any, Callable, Optional, Union
 
 import packaging
 import torch
+
+from transformer_engine.pytorch import TransformerLayer
+
 from megatron.core import parallel_state, tensor_parallel
 from megatron.core.fusions.fused_layer_norm import FusedLayerNorm
 from megatron.core.transformer.cuda_graphs import CudaGraphManager
 from megatron.core.transformer.module import MegatronModule
 from megatron.core.transformer.spec_utils import ModuleSpec
-from megatron.core.transformer.transformer_block import TransformerBlockSubmodules, get_num_layers_to_build
+from megatron.core.transformer.transformer_block import (
+    TransformerBlockSubmodules,
+    get_num_layers_to_build,
+)
 from megatron.core.transformer.transformer_layer import BaseTransformerLayer
 from megatron.core.transformer.utils import make_sharded_tensors_for_checkpoint
-from transformer_engine.pytorch import TransformerLayer
 
 
 # Copied from  nemo/collections/nlp/models/language_modeling/megatron/gpt_full_te_layer_autocast_spec.py
@@ -112,11 +117,13 @@ class AutocastTransformerLayer(TransformerLayer):
                 if ub_overlap_flag in kwargs:
                     transformer_layer_args[ub_overlap_flag] = kwargs[ub_overlap_flag]
                 else:
-                    transformer_layer_args[ub_overlap_flag] = kwargs.get(split_gemm_flag, True) or kwargs.get(
-                        atomic_gemm_flag, False
-                    )
+                    transformer_layer_args[ub_overlap_flag] = kwargs.get(
+                        split_gemm_flag, True
+                    ) or kwargs.get(atomic_gemm_flag, False)
             if te_version > packaging.version.Version("1.6.0.dev0"):
-                transformer_layer_args["ub_overlap_rs_dgrad"] = kwargs.get("ub_overlap_rs_dgrad", False)
+                transformer_layer_args["ub_overlap_rs_dgrad"] = kwargs.get(
+                    "ub_overlap_rs_dgrad", False
+                )
         else:
             transformer_layer_args["ub_split_ag"] = kwargs.get("ub_split_ag", True)
             transformer_layer_args["ub_split_rs"] = kwargs.get("ub_split_rs", True)
@@ -216,7 +223,9 @@ class TETransformerLayerAutocast(MegatronModule, BaseTransformerLayer):  # type:
             )
             if te_version > packaging.version.Version("1.6.0.dev0"):
                 transformer_layer_args["ub_overlap_rs_dgrad"] = (
-                    config.tp_comm_overlap_rs_dgrad if hasattr(config, "tp_comm_overlap_rs_dgrad") else False
+                    config.tp_comm_overlap_rs_dgrad
+                    if hasattr(config, "tp_comm_overlap_rs_dgrad")
+                    else False
                 )
         else:
             transformer_layer_args["ub_split_ag"] = config.tp_comm_split_ag
@@ -226,7 +235,9 @@ class TETransformerLayerAutocast(MegatronModule, BaseTransformerLayer):  # type:
         self.transformer_layer = AutocastTransformerLayer(**transformer_layer_args)
 
         if self.config.enable_cuda_graph and self.training:
-            assert not config.cpu_offloading and config.recompute_granularity is None, "Cudagraphs not supported"
+            assert (
+                not config.cpu_offloading and config.recompute_granularity is None
+            ), "Cudagraphs not supported"
             self.add_module("cudagraph_manager", CudaGraphManager(config))
 
     # Called by MCore's TransformerBlock.forward
@@ -249,14 +260,20 @@ class TETransformerLayerAutocast(MegatronModule, BaseTransformerLayer):  # type:
             encoder_output=context,
             enc_dec_attn_mask=context_mask,
             inference_params=inference_params,
-            is_first_microbatch=is_first_microbatch if is_first_microbatch is not None else self.is_first_microbatch,
+            is_first_microbatch=(
+                is_first_microbatch if is_first_microbatch is not None else self.is_first_microbatch
+            ),
             # checkpoint_core_attention,
         )
         self.is_first_microbatch = False
         context = None
 
         # External CUDA graph requires returned values to be Tensors
-        if hasattr(self.config, "external_cuda_graph") and self.config.external_cuda_graph and self.training:
+        if (
+            hasattr(self.config, "external_cuda_graph")
+            and self.config.external_cuda_graph
+            and self.training
+        ):
             return hidden_states
         return hidden_states, context
 
@@ -323,7 +340,8 @@ def get_gpt_full_te_layer_autocast_spec(transformer_config) -> ModuleSpec:
     """Get the ModuleSpec for full Transformer layer from Transformer Engine."""
     num_layers = get_num_layers_to_build(transformer_config)
     return TransformerBlockSubmodules(
-        layer_specs=[ModuleSpec(module=TETransformerLayerAutocast)] * num_layers, layer_norm=FusedLayerNorm
+        layer_specs=[ModuleSpec(module=TETransformerLayerAutocast)] * num_layers,
+        layer_norm=FusedLayerNorm,
     )
 
 

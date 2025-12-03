@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
 import torch
+
 from transformers import (
     AutoConfig,
     AutoImageProcessor,
@@ -30,8 +31,9 @@ from transformers import (
 from transformers.generation.utils import GenerateOutput
 
 from flagscale.train.bridge.models.hf_pretrained.base import PreTrainedBase
-from flagscale.train.bridge.models.hf_pretrained.safe_config_loader import safe_load_config_with_retry
-
+from flagscale.train.bridge.models.hf_pretrained.safe_config_loader import (
+    safe_load_config_with_retry,
+)
 
 # Type variable for generic model type
 VLMType = TypeVar("VLMType", bound=PreTrainedModel)
@@ -198,10 +200,7 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
         if self.model_name_or_path is None:
             raise ValueError("model_name_or_path must be provided to load model")
 
-        model_kwargs = {
-            "trust_remote_code": self.trust_remote_code,
-            **self.init_kwargs,
-        }
+        model_kwargs = {"trust_remote_code": self.trust_remote_code, **self.init_kwargs}
 
         if self.torch_dtype is not None:
             model_kwargs["torch_dtype"] = self.torch_dtype
@@ -229,9 +228,7 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
             raise ValueError("model_name_or_path must be provided to load config")
 
         return safe_load_config_with_retry(
-            self.model_name_or_path,
-            trust_remote_code=self.trust_remote_code,
-            **self.init_kwargs,
+            self.model_name_or_path, trust_remote_code=self.trust_remote_code, **self.init_kwargs
         )
 
     def _load_processor(self) -> ProcessorMixin:
@@ -389,7 +386,11 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
         """Set the generation config manually."""
         self._generation_config = value
         # Update model's generation config if model is loaded
-        if hasattr(self, "_model") and self._model is not None and hasattr(self._model, "generation_config"):
+        if (
+            hasattr(self, "_model")
+            and self._model is not None
+            and hasattr(self._model, "generation_config")
+        ):
             self._model.generation_config = value
 
     @property
@@ -455,7 +456,9 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
             Encoded inputs ready for the model
         """
         if self.tokenizer is None:
-            raise ValueError("No tokenizer available. Set tokenizer manually or ensure model has one.")
+            raise ValueError(
+                "No tokenizer available. Set tokenizer manually or ensure model has one."
+            )
         return self.tokenizer(text, return_tensors="pt", **kwargs).to(self.device)
 
     def decode(self, token_ids: torch.Tensor, **kwargs) -> str:
@@ -470,14 +473,13 @@ class PreTrainedVLM(PreTrainedBase, Generic[VLMType]):
             Decoded text
         """
         if self.tokenizer is None:
-            raise ValueError("No tokenizer available. Set tokenizer manually or ensure model has one.")
+            raise ValueError(
+                "No tokenizer available. Set tokenizer manually or ensure model has one."
+            )
         return self.tokenizer.decode(token_ids, **kwargs)
 
     def process_images_and_text(
-        self,
-        images: Optional[Any] = None,
-        text: Optional[Union[str, List[str]]] = None,
-        **kwargs,
+        self, images: Optional[Any] = None, text: Optional[Union[str, List[str]]] = None, **kwargs
     ) -> Dict[str, torch.Tensor]:
         """
         Process images and text together using the processor.

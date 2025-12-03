@@ -14,18 +14,19 @@
 
 import logging
 import math
+
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Union
 
 import torch
 import torch.nn.functional as F
+
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
 from megatron.core.transformer import ModuleSpec
 
 from flagscale.train.bridge.models.gpt_provider import GPTModelProvider
 from flagscale.train.bridge.models.llama.llama4_utils import get_llama4_layer_spec
 from flagscale.train.bridge.utils import fusions
-
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,9 @@ class LlamaModelProvider(GPTModelProvider):
     masked_softmax_fusion: bool = field(default_factory=fusions.can_enable_masked_softmax_fusion)
     bias_dropout_fusion: bool = field(default_factory=fusions.can_enable_bias_dropout_fusion)
     apply_rope_fusion: bool = field(default_factory=fusions.can_enable_apply_rope_fusion)
-    gradient_accumulation_fusion: bool = field(default_factory=fusions.can_enable_gradient_accumulation_fusion)
+    gradient_accumulation_fusion: bool = field(
+        default_factory=fusions.can_enable_gradient_accumulation_fusion
+    )
     use_transformer_engine_op_fuser: Optional[bool] = None
 
 
@@ -158,7 +161,9 @@ class Llama31ModelProvider(Llama3ModelProvider):
         Returns:
             MCoreGPTModel: Configured Megatron Core GPT model instance
         """
-        model = super().provide(pre_process=pre_process, post_process=post_process, vp_stage=vp_stage)
+        model = super().provide(
+            pre_process=pre_process, post_process=post_process, vp_stage=vp_stage
+        )
         # Apply rope scaling for Llama3.1 model
         model.rotary_pos_emb.inv_freq = apply_rope_scaling(
             model.rotary_pos_emb.inv_freq,
@@ -448,8 +453,12 @@ def apply_rope_scaling(
     # wavelen > low_freq_wavelen: divide by factor
     inv_freq_llama = torch.where(wavelen > low_freq_wavelen, inv_freq / factor, inv_freq)
     # otherwise: interpolate between the two, using a smooth factor
-    smooth_factor = (old_context_len / wavelen - low_freq_factor) / (high_freq_factor - low_freq_factor)
-    smoothed_inv_freq = (1 - smooth_factor) * inv_freq_llama / factor + smooth_factor * inv_freq_llama
+    smooth_factor = (old_context_len / wavelen - low_freq_factor) / (
+        high_freq_factor - low_freq_factor
+    )
+    smoothed_inv_freq = (
+        1 - smooth_factor
+    ) * inv_freq_llama / factor + smooth_factor * inv_freq_llama
     is_medium_freq = ~(wavelen < high_freq_wavelen) * ~(wavelen > low_freq_wavelen)
     inv_freq_llama = torch.where(is_medium_freq, smoothed_inv_freq, inv_freq_llama)
 

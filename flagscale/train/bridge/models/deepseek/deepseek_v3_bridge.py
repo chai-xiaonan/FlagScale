@@ -13,12 +13,16 @@
 # limitations under the License.
 
 import torch
+
 from megatron.core.models.gpt.gpt_model import GPTModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge
 from flagscale.train.bridge.models.conversion.param_mapping import AutoMapping
-from flagscale.train.bridge.models.deepseek.common import get_common_configs, get_common_mapping_list
+from flagscale.train.bridge.models.deepseek.common import (
+    get_common_configs,
+    get_common_mapping_list,
+)
 from flagscale.train.bridge.models.deepseek.deepseek_provider import DeepSeekV3ModelProvider
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 
@@ -61,7 +65,7 @@ class DeepSeekV3Bridge(MegatronModelBridge):
 
         param_mappings = {
             # expert bias
-            "decoder.layers.*.mlp.router.expert_bias": "model.layers.*.mlp.gate.e_score_correction_bias",
+            "decoder.layers.*.mlp.router.expert_bias": "model.layers.*.mlp.gate.e_score_correction_bias"
         }
 
         for megatron_param, hf_param in param_mappings.items():

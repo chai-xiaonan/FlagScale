@@ -19,12 +19,13 @@
 import importlib
 import logging
 import traceback
+
 from contextlib import contextmanager
 from typing import Tuple
 
 import torch
-from packaging.version import Version as PkgVersion
 
+from packaging.version import Version as PkgVersion
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -38,9 +39,7 @@ or use `pip install --extra-index-url https://pypi.nvidia.com ".[cuda12x]"` if i
 MISSING_NEMO_EXPORT_DEPLOY_MSG = (
     "nemo-export-deploy is not available. Please install it with `pip install nemo-export-deploy`."
 )
-MISSING_NVRX_MSG = (
-    "nvidia-resiliency-ext is not available. Please install it with `pip install nvidia-resiliency-ext`."
-)
+MISSING_NVRX_MSG = "nvidia-resiliency-ext is not available. Please install it with `pip install nvidia-resiliency-ext`."
 MISSING_NEMO_RUN_MSG = "nemo-run is not available. Please install it with `pip install nemo-run`."
 
 
@@ -295,7 +294,9 @@ def safe_import(module, *, msg=None, alt=None) -> Tuple[object, bool]:
         return alt, False
 
 
-def safe_import_from(module, symbol, *, msg=None, alt=None, fallback_module=None) -> Tuple[object, bool]:
+def safe_import_from(
+    module, symbol, *, msg=None, alt=None, fallback_module=None
+) -> Tuple[object, bool]:
     """A function used to import symbols from modules that may not be available.
 
     This function will attempt to import a symbol with the given name from

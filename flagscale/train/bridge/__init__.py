@@ -15,6 +15,4 @@
 
 from flagscale.train.bridge.models.conversion.auto_bridge import AutoBridge
 
-__all__ = [
-    "AutoBridge",
-]
+__all__ = ["AutoBridge"]

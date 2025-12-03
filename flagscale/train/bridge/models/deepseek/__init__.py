@@ -27,7 +27,6 @@ from flagscale.train.bridge.models.deepseek.deepseek_provider import (
 from flagscale.train.bridge.models.deepseek.deepseek_v2_bridge import DeepSeekV2Bridge  # noqa: F401
 from flagscale.train.bridge.models.deepseek.deepseek_v3_bridge import DeepSeekV3Bridge  # noqa: F401
 
-
 __all__ = [
     "DeepSeekModelProvider",
     "DeepSeekV2LiteModelProvider",

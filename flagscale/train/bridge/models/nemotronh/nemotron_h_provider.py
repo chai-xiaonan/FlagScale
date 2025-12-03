@@ -14,12 +14,14 @@
 
 import logging
 import warnings
-from dataclasses import dataclass
 
-#from flagscale.train.bridge.training.mlm_compat.activations import squared_relu
+from dataclasses import dataclass
 
 from flagscale.train.bridge.models.mamba.mamba_provider import MambaModelProvider
 from flagscale.train.bridge.utils.common_utils import get_rank_safe
+
+# from flagscale.train.bridge.training.mlm_compat.activations import squared_relu
+
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +36,7 @@ class NemotronHModelProvider(MambaModelProvider):
     mamba_head_dim: int = 64
     num_query_groups: int = 8
     make_vocab_size_divisible_by: int = 128
-    #activation_func: callable = squared_relu
+    # activation_func: callable = squared_relu
     masked_softmax_fusion: bool = True
     apply_query_key_layer_scaling: bool = False
     persist_layer_norm: bool = True

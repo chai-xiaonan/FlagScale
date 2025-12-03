@@ -13,11 +13,15 @@
 # limitations under the License.
 
 import torch
+
 from megatron.core.models.gpt.gpt_model import GPTModel
 
 from flagscale.train.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from flagscale.train.bridge.models.conversion.model_bridge import MegatronModelBridge
-from flagscale.train.bridge.models.deepseek.common import get_common_configs, get_common_mapping_list
+from flagscale.train.bridge.models.deepseek.common import (
+    get_common_configs,
+    get_common_mapping_list,
+)
 from flagscale.train.bridge.models.deepseek.deepseek_provider import DeepSeekV2ModelProvider
 from flagscale.train.bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 

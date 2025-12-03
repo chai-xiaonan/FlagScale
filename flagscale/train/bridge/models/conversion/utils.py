@@ -16,13 +16,16 @@ import copy
 import functools
 import re
 import types
+
 from typing import Iterable, List, Optional, Tuple
 
 import torch
-from megatron.core.transformer.module import MegatronModule
-from megatron.core.utils import unwrap_model
+
 from rich.table import Table
 from transformers.configuration_utils import PretrainedConfig
+
+from megatron.core.transformer.module import MegatronModule
+from megatron.core.utils import unwrap_model
 
 
 def weights_verification_table(bridge, megatron_model) -> Table:
@@ -58,9 +61,7 @@ def weights_verification_table(bridge, megatron_model) -> Table:
 
 
 def get_module_and_param_from_name(
-    models: MegatronModule | List[MegatronModule],
-    param_name: str,
-    vp_stage: Optional[int] = None,
+    models: MegatronModule | List[MegatronModule], param_name: str, vp_stage: Optional[int] = None
 ) -> Tuple[torch.nn.Module, torch.Tensor] | Tuple[torch.nn.Module, torch.Tensor, Tuple]:
     """
     Get parameter from specific VP stage, ensuring that parameter
@@ -189,7 +190,8 @@ def remove_non_pickleables(obj, max_depth: int = 2, current_depth: int = 0):
         if isinstance(obj, type):
             return obj
         elif hasattr(obj, "__call__") and (
-            isinstance(obj, (types.FunctionType, types.MethodType, functools.partial)) or hasattr(obj, "__self__")
+            isinstance(obj, (types.FunctionType, types.MethodType, functools.partial))
+            or hasattr(obj, "__self__")
         ):  # bound methods
             return None
 
@@ -219,7 +221,10 @@ def remove_non_pickleables(obj, max_depth: int = 2, current_depth: int = 0):
 
     # Handle dictionaries
     elif isinstance(obj, dict):
-        return {key: remove_non_pickleables(value, max_depth, current_depth + 1) for key, value in obj.items()}
+        return {
+            key: remove_non_pickleables(value, max_depth, current_depth + 1)
+            for key, value in obj.items()
+        }
 
     # For primitive types and other safe objects, return as-is
     return obj
@@ -247,8 +252,7 @@ def extract_sort_key(param_name: str):
 
 
 def get_causal_lm_class_via_auto_map(
-    model_name_or_path: str,
-    config: PretrainedConfig,
+    model_name_or_path: str, config: PretrainedConfig
 ) -> type | None:
     """Return CausalLM class via config.auto_map if available; otherwise None.
 

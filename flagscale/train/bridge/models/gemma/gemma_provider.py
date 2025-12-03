@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import torch
+
 from megatron.core import parallel_state
 from megatron.core.activations import fast_gelu
 from megatron.core.models.gpt import GPTModel as MCoreGPTModel
@@ -67,14 +68,16 @@ class GemmaModelProvider(GPTModelProvider):
         Returns:
             MCoreGPTModel: Configured Megatron Core GPT model instance
         """
-        model = super().provide(pre_process=pre_process, post_process=post_process, vp_stage=vp_stage)
+        model = super().provide(
+            pre_process=pre_process, post_process=post_process, vp_stage=vp_stage
+        )
 
         # Apply Embedding Scaling for Gemma: sqrt(hidden_size)
-        if parallel_state.is_pipeline_first_stage(
-            ignore_virtual=False,
-            vp_stage=vp_stage,
-        ):
-            from flagscale.train.bridge.models.gemma.modules import EmbeddingScalingMixin, extend_instance
+        if parallel_state.is_pipeline_first_stage(ignore_virtual=False, vp_stage=vp_stage):
+            from flagscale.train.bridge.models.gemma.modules import (
+                EmbeddingScalingMixin,
+                extend_instance,
+            )
 
             extend_instance(model.embedding, EmbeddingScalingMixin)
 

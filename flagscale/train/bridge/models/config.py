@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import json
-from dataclasses import fields as dataclass_fields
-from dataclasses import is_dataclass
+
+from dataclasses import fields as dataclass_fields, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Protocol, Type, TypeVar, Union, runtime_checkable
 
 import yaml
+
 from omegaconf import OmegaConf
 
 from flagscale.train.bridge.utils.instantiate_utils import InstantiationMode, instantiate
 from flagscale.train.bridge.utils.yaml_utils import safe_yaml_representers
-
 
 # For TOML support
 try:
@@ -138,11 +138,15 @@ def from_hf_pretrained(
             config_dict = json.load(f)
     elif file_ext == ".toml":
         if not HAS_TOML:
-            raise ImportError("TOML support requires the 'toml' package. Install it with: pip install toml")
+            raise ImportError(
+                "TOML support requires the 'toml' package. Install it with: pip install toml"
+            )
         with open(config_file, "r", encoding="utf-8") as f:
             config_dict = toml.load(f)
     else:
-        raise ValueError(f"Unsupported file format: {file_ext}. Supported formats: .yaml, .yml, .json, .toml")
+        raise ValueError(
+            f"Unsupported file format: {file_ext}. Supported formats: .yaml, .yml, .json, .toml"
+        )
 
     # Check for trust_remote_code requirement
     if not trust_remote_code and _contains_code_references(config_dict):
@@ -207,10 +211,14 @@ def save_hf_pretrained(
 
     config_format = config_format.lower()
     if config_format not in format_to_ext:
-        raise ValueError(f"Unsupported format: {config_format}. Supported formats: {list(format_to_ext.keys())}")
+        raise ValueError(
+            f"Unsupported format: {config_format}. Supported formats: {list(format_to_ext.keys())}"
+        )
 
     if config_format == "toml" and not HAS_TOML:
-        raise ImportError("TOML support requires the 'toml' package. Install it with: pip install toml")
+        raise ImportError(
+            "TOML support requires the 'toml' package. Install it with: pip install toml"
+        )
 
     config_file = save_path / f"{config_name}{format_to_ext[config_format]}"
 
@@ -324,7 +332,9 @@ def _contains_code_references(config_dict: Dict[str, Any]) -> bool:
             # Check for _target_ that's not a built-in type
             if key == "_target_" and isinstance(value, str):
                 # Consider it a code reference if it's not a basic type
-                if not value.startswith(("builtins.", "str", "int", "float", "bool", "list", "dict", "tuple")):
+                if not value.startswith(
+                    ("builtins.", "str", "int", "float", "bool", "list", "dict", "tuple")
+                ):
                     return True
             # Check for _call_ = False which indicates a code reference
             if key == "_call_" and value is False:

@@ -15,7 +15,10 @@ from copy import deepcopy
 from typing import Optional, Tuple, Union
 
 import torch
+
 from einops import rearrange
+from torch import Tensor
+
 from megatron.core import parallel_state
 from megatron.core.inference.contexts import BaseInferenceContext
 from megatron.core.models.common.embeddings.rope_utils import apply_rotary_pos_emb
@@ -25,8 +28,6 @@ from megatron.core.transformer.attention import SelfAttention as MCoreSelfAttent
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.torch_norm import L2Norm
 from megatron.core.utils import deprecate_inference_params, is_fa_min_version
-from torch import Tensor
-
 
 try:
     from flashattn_hopper.flash_attn_interface import _flash_attn_forward
@@ -95,7 +96,9 @@ def chunkify(x, attention_chunk_size):
     # Determine original sequence length.
     seq_length = x.shape[0]
     # Compute new sequence length (pad_seq_len) as the smallest multiple of attention_chunk_size
-    pad_seq_len = ((seq_length + attention_chunk_size - 1) // attention_chunk_size) * attention_chunk_size
+    pad_seq_len = (
+        (seq_length + attention_chunk_size - 1) // attention_chunk_size
+    ) * attention_chunk_size
 
     # If padding is needed, create a pad tensor with the same type and device as x.
     if pad_seq_len != seq_length:
@@ -137,7 +140,10 @@ def get_llama4_layer_spec(config) -> ModuleSpec:
         layer_no = idx + offset
         updated_layer_spec = deepcopy(layer_spec)
 
-        is_nope_layer = config.nope_layer_interval is not None and (layer_no + 1) % config.nope_layer_interval == 0
+        is_nope_layer = (
+            config.nope_layer_interval is not None
+            and (layer_no + 1) % config.nope_layer_interval == 0
+        )
         updated_layer_spec.submodules.self_attention.module = Llama4SelfAttention
         updated_layer_spec.submodules.self_attention.params = {
             "is_nope_layer": is_nope_layer,
@@ -206,9 +212,9 @@ class Llama4SelfAttention(MCoreSelfAttention):
         inference_context = deprecate_inference_params(inference_context, inference_params)
 
         if inference_context and inference_context.is_dynamic_batching():
-            assert (HAVE_FA3 and _flash_attn_forward is not None) or is_fa_min_version("2.7.3"), (
-                "flash attn verion v2.7.3 and above is required for dynamic batching."
-            )
+            assert (HAVE_FA3 and _flash_attn_forward is not None) or is_fa_min_version(
+                "2.7.3"
+            ), "flash attn verion v2.7.3 and above is required for dynamic batching."
 
         # hidden_states: [sq, b, h]
         if self.config.flash_decode and not self.training and inference_context is not None:
@@ -242,7 +248,9 @@ class Llama4SelfAttention(MCoreSelfAttention):
         ):
             assert self.layer_number in inference_context.key_value_memory_dict
             assert inference_context.sequence_len_offset is not None
-            inference_key_memory, inference_value_memory = inference_context.key_value_memory_dict[self.layer_number]
+            inference_key_memory, inference_value_memory = inference_context.key_value_memory_dict[
+                self.layer_number
+            ]
             output = self.flash_decode(
                 sequence_len_offset=sequence_len_offset,
                 query_layer=query,
@@ -258,15 +266,17 @@ class Llama4SelfAttention(MCoreSelfAttention):
             output, bias = self.linear_proj(context_layer)
             return output, bias
 
-        query, key, value, rotary_pos_emb, attn_mask_type, block_table = self._adjust_key_value_for_inference(
-            inference_context,
-            query,
-            key,
-            value,
-            rotary_pos_emb,
-            rotary_pos_cos,
-            rotary_pos_sin,
-            sequence_len_offset,
+        query, key, value, rotary_pos_emb, attn_mask_type, block_table = (
+            self._adjust_key_value_for_inference(
+                inference_context,
+                query,
+                key,
+                value,
+                rotary_pos_emb,
+                rotary_pos_cos,
+                rotary_pos_sin,
+                sequence_len_offset,
+            )
         )
 
         original_shape = None
@@ -280,16 +290,26 @@ class Llama4SelfAttention(MCoreSelfAttention):
 
             if original_seq_len > self.attention_chunk_size:
                 original_packed_seq_params = deepcopy(packed_seq_params)
-                packed_seq_params.max_seqlen_q = packed_seq_params.max_seqlen_kv = self.attention_chunk_size
+                packed_seq_params.max_seqlen_q = packed_seq_params.max_seqlen_kv = (
+                    self.attention_chunk_size
+                )
                 # limit the each sub seq length to be capped at self.attention_chunk_size
                 # assume attention_chunk_size = 10
                 # original cu_seqlens_q = [0, 15, 20, 45]
                 # new cu_seqlens_q = [0, 10, 15, 20, 30, 40, 45]
-                packed_seq_params.cu_seqlens_q, packed_seq_params.cu_seqlens_q_padded = chunkify_cu_seqlens(
-                    packed_seq_params.cu_seqlens_q, packed_seq_params.cu_seqlens_q_padded, self.attention_chunk_size
+                packed_seq_params.cu_seqlens_q, packed_seq_params.cu_seqlens_q_padded = (
+                    chunkify_cu_seqlens(
+                        packed_seq_params.cu_seqlens_q,
+                        packed_seq_params.cu_seqlens_q_padded,
+                        self.attention_chunk_size,
+                    )
                 )
-                packed_seq_params.cu_seqlens_kv, packed_seq_params.cu_seqlens_kv_padded = chunkify_cu_seqlens(
-                    packed_seq_params.cu_seqlens_kv, packed_seq_params.cu_seqlens_kv_padded, self.attention_chunk_size
+                packed_seq_params.cu_seqlens_kv, packed_seq_params.cu_seqlens_kv_padded = (
+                    chunkify_cu_seqlens(
+                        packed_seq_params.cu_seqlens_kv,
+                        packed_seq_params.cu_seqlens_kv_padded,
+                        self.attention_chunk_size,
+                    )
                 )
         else:
             original_seq_len = query.shape[0]
@@ -299,11 +319,20 @@ class Llama4SelfAttention(MCoreSelfAttention):
                 query = chunkify(query, self.attention_chunk_size)
                 key = chunkify(key, self.attention_chunk_size)
                 value = chunkify(value, self.attention_chunk_size)
-                rotary_pos_emb = rotary_pos_emb[: self.attention_chunk_size] if rotary_pos_emb is not None else None
+                rotary_pos_emb = (
+                    rotary_pos_emb[: self.attention_chunk_size]
+                    if rotary_pos_emb is not None
+                    else None
+                )
 
-        if parallel_state.get_context_parallel_world_size() > 1 and original_seq_len > self.attention_chunk_size:
+        if (
+            parallel_state.get_context_parallel_world_size() > 1
+            and original_seq_len > self.attention_chunk_size
+        ):
             assert original_seq_len % (parallel_state.get_context_parallel_world_size() * 2) == 0
-            cp_chunk_len = original_seq_len // (parallel_state.get_context_parallel_world_size() * 2)
+            cp_chunk_len = original_seq_len // (
+                parallel_state.get_context_parallel_world_size() * 2
+            )
             assert cp_chunk_len % self.attention_chunk_size == 0
 
         # ================================================
@@ -383,7 +412,9 @@ class Llama4SelfAttention(MCoreSelfAttention):
                 # Dynamic batching attention kernel.
                 q, k, v = (query, key, value)
                 cu_query_lengths, max_seqlen_q = inference_context.cu_query_lengths()
-                cu_kv_lengths, kv_lengths, kv_lengths_decode_only, max_seqlen_k = inference_context.cu_kv_lengths()
+                cu_kv_lengths, kv_lengths, kv_lengths_decode_only, max_seqlen_k = (
+                    inference_context.cu_kv_lengths()
+                )
 
                 core_attn_out = self.flash_decode_and_prefill(
                     q,
@@ -411,18 +442,26 @@ class Llama4SelfAttention(MCoreSelfAttention):
                 packed_seq_params.max_seqlen_kv = original_packed_seq_params.max_seqlen_kv
                 packed_seq_params.cu_seqlens_q = original_packed_seq_params.cu_seqlens_q
                 packed_seq_params.cu_seqlens_kv = original_packed_seq_params.cu_seqlens_kv
-                packed_seq_params.cu_seqlens_q_padded = original_packed_seq_params.cu_seqlens_q_padded
-                packed_seq_params.cu_seqlens_kv_padded = original_packed_seq_params.cu_seqlens_kv_padded
+                packed_seq_params.cu_seqlens_q_padded = (
+                    original_packed_seq_params.cu_seqlens_q_padded
+                )
+                packed_seq_params.cu_seqlens_kv_padded = (
+                    original_packed_seq_params.cu_seqlens_kv_padded
+                )
         else:
             if original_seq_len > self.attention_chunk_size:
                 # Reshape from [attention_chunk_size, num_chunks * batch_size, hidden_size]
                 # back to [seq_len, batch_size, hidden_size]
                 batch_size = original_shape[1]
                 num_chunks = core_attn_out.shape[1] // batch_size
-                core_attn_out = core_attn_out.reshape(self.attention_chunk_size, num_chunks, batch_size, -1)
+                core_attn_out = core_attn_out.reshape(
+                    self.attention_chunk_size, num_chunks, batch_size, -1
+                )
                 # [num_chunks, attention_chunk_size, batch_size, hidden_size]
                 core_attn_out = core_attn_out.transpose(0, 1)
-                core_attn_out = core_attn_out.reshape(num_chunks * self.attention_chunk_size, batch_size, -1)
+                core_attn_out = core_attn_out.reshape(
+                    num_chunks * self.attention_chunk_size, batch_size, -1
+                )
                 core_attn_out = core_attn_out[:original_seq_len]
 
         # =================

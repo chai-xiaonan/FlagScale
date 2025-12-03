@@ -14,10 +14,12 @@
 # limitations under the License.
 
 import sys
+
 from pathlib import Path
 from typing import Dict, Generic, List, Optional, TypeVar, Union
 
 import torch
+
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -28,8 +30,9 @@ from transformers import (
 from transformers.generation.utils import GenerateOutput
 
 from flagscale.train.bridge.models.hf_pretrained.base import PreTrainedBase
-from flagscale.train.bridge.models.hf_pretrained.safe_config_loader import safe_load_config_with_retry
-
+from flagscale.train.bridge.models.hf_pretrained.safe_config_loader import (
+    safe_load_config_with_retry,
+)
 
 # Python 3.12+ supports PEP 692 (TypedDict Unpack)
 if sys.version_info >= (3, 12):
@@ -152,10 +155,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         if self.model_name_or_path is None:
             raise ValueError("model_name_or_path must be provided to load model")
 
-        model_kwargs = {
-            "trust_remote_code": self.trust_remote_code,
-            **self.init_kwargs,
-        }
+        model_kwargs = {"trust_remote_code": self.trust_remote_code, **self.init_kwargs}
         if self.torch_dtype is not None:
             model_kwargs["torch_dtype"] = self.torch_dtype
         config = getattr(self, "_config", None)
@@ -175,9 +175,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         if self.model_name_or_path is None:
             raise ValueError("model_name_or_path must be provided to load config")
         return safe_load_config_with_retry(
-            self.model_name_or_path,
-            trust_remote_code=self.trust_remote_code,
-            **self.init_kwargs,
+            self.model_name_or_path, trust_remote_code=self.trust_remote_code, **self.init_kwargs
         )
 
     def _load_tokenizer(self) -> PreTrainedTokenizer:
@@ -185,9 +183,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         if self.model_name_or_path is None:
             raise ValueError("model_name_or_path must be provided to load tokenizer")
         tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name_or_path,
-            trust_remote_code=self.trust_remote_code,
-            **self.init_kwargs,
+            self.model_name_or_path, trust_remote_code=self.trust_remote_code, **self.init_kwargs
         )
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
@@ -288,9 +284,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         )
 
     def generate(
-        self,
-        input_ids: Optional[torch.LongTensor] = None,
-        **kwargs: Unpack["GenerateKwargs"],
+        self, input_ids: Optional[torch.LongTensor] = None, **kwargs: Unpack["GenerateKwargs"]
     ) -> Union[torch.LongTensor, GenerateOutput]:
         """
         Generate text using the underlying language model.
@@ -367,7 +361,9 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         """Forward call to model."""
         return self.model(*args, **kwargs)
 
-    def encode(self, text: Union[str, List[str]], **kwargs: Unpack["EncodeKwargs"]) -> Dict[str, torch.Tensor]:
+    def encode(
+        self, text: Union[str, List[str]], **kwargs: Unpack["EncodeKwargs"]
+    ) -> Dict[str, torch.Tensor]:
         """
         Encode text into token IDs using the model's tokenizer.
 
@@ -432,9 +428,7 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
         return self.tokenizer(text, **kwargs).to(self.device)
 
     def decode(
-        self,
-        token_ids: Union[int, List[int], torch.Tensor],
-        **kwargs: Unpack["DecodeKwargs"],
+        self, token_ids: Union[int, List[int], torch.Tensor], **kwargs: Unpack["DecodeKwargs"]
     ) -> str:
         """
         Decode token IDs back into text using the model's tokenizer.
@@ -582,7 +576,9 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
             config = self.config
             layers = getattr(config, "num_hidden_layers", "N/A")
             hidden_size = getattr(config, "hidden_size", "N/A")
-            model_repr_content = f"{model_class_name} [layers={layers}, hidden_size={hidden_size}, loaded]"
+            model_repr_content = (
+                f"{model_class_name} [layers={layers}, hidden_size={hidden_size}, loaded]"
+            )
         elif "config" in self.__dict__:  # Model not loaded, but config is
             config = self.config
             model_class_name_from_hf_config = "CausalLM"  # Default
@@ -601,7 +597,9 @@ class PreTrainedCausalLM(PreTrainedBase, Generic[CausalLMType]):
             details_str = ", ".join(details_parts)
             status_suffix = "not loaded"
             if details_str:
-                model_repr_content = f"{model_class_name_from_hf_config}({details_str}) [{status_suffix}]"
+                model_repr_content = (
+                    f"{model_class_name_from_hf_config}({details_str}) [{status_suffix}]"
+                )
             else:
                 model_repr_content = f"{model_class_name_from_hf_config} [{status_suffix}]"
         else:  # Model and Config also not loaded
