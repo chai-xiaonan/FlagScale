@@ -23,7 +23,6 @@ from flagscale.train.bridge.utils.common_utils import get_rank_safe
 # from flagscale.train.bridge.training.mlm_compat.activations import squared_relu
 
 
-
 logger = logging.getLogger(__name__)
 
 
