@@ -32,9 +32,9 @@ system:
     save_interval: ${experiment.save_steps}
     load: ${experiment.load}
     ckpt_format: ${experiment.ckpt_format}
-    #use_hf_config: ${experiment.use_hf_config}
-    #use_hf: true
-
+    #load_hf: true  #use hf ckpt 
+    #save_hf: true   #save hf ckpt
+    #load_hf_config: ${experiment.load_hf_config}
 model:
   transformer_impl: transformer_engine
   num_layers: 28

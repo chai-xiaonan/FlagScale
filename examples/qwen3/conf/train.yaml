@@ -8,10 +8,10 @@ experiment:
   exp_name: Qwen3-32b-Train
   seed: 42
   save_steps: 10000
-  load: null
+  load: null   #load safe path
   exp_dir: xxx
   ckpt_format: torch
-  #use_hf_config:  ##hf config path
+    #load_hf_config: #load hf config path   
   task:
     type: train
     backend: megatron
