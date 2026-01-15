@@ -1,19 +1,19 @@
 # Copyright (c) 2025, BAAI. All rights reserved.
 #
-# Copied from: https://github.com/NVIDIA-NeMo/Megatron-Bridge
+# Mainly adapted from: https://github.com/NVIDIA-NeMo/Megatron-Bridge
 
 import torch
 
 from megatron.core.models.gpt.gpt_model import GPTModel
 
-from megatron.nemo_bridge.models.conversion.mapping_registry import MegatronMappingRegistry
+from megatron.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from megatron.nemo_bridge.models.conversion.model_bridge import MegatronModelBridge
 from megatron.nemo_bridge.models.conversion.param_mapping import AutoMapping
 from megatron.nemo_bridge.models.deepseek.common import (
     get_common_configs,
     get_common_mapping_list,
 )
-from megatron.nemo_bridge.models.deepseek.deepseek_provider import DeepSeekV3ModelProvider
+from megatron.bridge.models.deepseek.deepseek_provider import DeepSeekV3ModelProvider
 from megatron.nemo_bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
 
 

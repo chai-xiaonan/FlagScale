@@ -479,7 +479,7 @@ def save_checkpoint(iteration, model, optimizer, opt_param_scheduler, num_floati
         if iteration % args.save_hf_interval == 0 or iteration == args.train_iters:
             #use megatron bridge
             from megatron.nemo_bridge.models import AutoBridge
-            from megatron.nemo_bridge.models.hf_pretrained.safe_config_loader import safe_load_config_with_retry
+            from megatron.bridge.models.hf_pretrained.safe_config_loader import safe_load_config_with_retry
             from transformers import AutoConfig
             #Load the HF model from config
             config_load = args.hf_config_path

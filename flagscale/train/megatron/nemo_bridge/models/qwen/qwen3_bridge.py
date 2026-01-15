@@ -1,6 +1,6 @@
 # Copyright (c) 2025, BAAI. All rights reserved.
 #
-# Copied from: https://github.com/NVIDIA-NeMo/Megatron-Bridge
+# Mainly adapted from: https://github.com/NVIDIA-NeMo/Megatron-Bridge
 
 import torch
 
@@ -8,15 +8,15 @@ from transformers import Qwen3ForCausalLM
 
 from megatron.core.models.gpt.gpt_model import GPTModel
 
-from megatron.nemo_bridge.models.conversion.mapping_registry import MegatronMappingRegistry
+from megatron.bridge.models.conversion.mapping_registry import MegatronMappingRegistry
 from megatron.nemo_bridge.models.conversion.model_bridge import MegatronModelBridge
 from megatron.nemo_bridge.models.conversion.param_mapping import (
     AutoMapping,
-    GatedMLPMapping,
     QKVMapping,
 )
+from megatron.bridge.models.conversion.param_mapping import GatedMLPMapping
 from megatron.nemo_bridge.models.hf_pretrained.causal_lm import PreTrainedCausalLM
-from megatron.nemo_bridge.models.qwen.qwen_provider import Qwen3ModelProvider
+from megatron.bridge.models.qwen.qwen_provider import Qwen3ModelProvider
 
 
 @MegatronModelBridge.register_bridge(source=Qwen3ForCausalLM, target=GPTModel)
