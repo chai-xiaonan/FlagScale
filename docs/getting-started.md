@@ -29,14 +29,14 @@ We recommend using the latest release of [NGC's PyTorch container](https://catal
 
 2. Install FlagScale requirements
     ```sh
-    pip install . --verbose 
+    pip install . --verbose
     ```
 
-3. Install backends 
+3. Install backends
 
 - **Inference/Serving backend**
-    
-    vLLM-FL: 
+
+    vLLM-FL:
     ```sh
     git clone https://github.com/flagos-ai/vllm-FL
     cd vllm-FL
@@ -47,8 +47,8 @@ We recommend using the latest release of [NGC's PyTorch container](https://catal
     If you need vLLM-plugin-FL, see details in [vLLM-plugin-FL](https://github.com/flagos-ai/vllm-plugin-FL)
 
 
-- **Traning backend**
-    Megatron-LM-FL: 
+- **Training backend**
+    Megatron-LM-FL:
     ```sh
     git clone https://github.com/flagos-ai/Megatron-LM-FL
     cd Megatron-LM-FL
@@ -59,6 +59,17 @@ We recommend using the latest release of [NGC's PyTorch container](https://catal
     APEX_CPP_EXT=1 APEX_CUDA_EXT=1 pip install -v --no-build-isolation .
     ```
     See more details in [Megatron-LM-FL](https://github.com/flagos-ai/Megatron-LM-FL)
+
+
+- **RL backend**
+    verl-FL:
+    ```sh
+    git clone https://github.com/flagos-ai/verl-FL.git
+    cd verl-FL
+    pip install --no-deps -e .
+    ```
+    See more details in [verl-FL](https://github.com/flagos-ai/verl-FL.git) to get full installation instructions.
+
 
 ## Run a Task
 
@@ -87,7 +98,7 @@ Require Megatron-LM-FL env
         ```sh
         mkdir -p ./qwentokenizer && cd ./qwentokenizer
         wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/tokenizers/qwentokenizer/tokenizer_config.json" -O tokenizer_config.json
-        wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/tokenizers/qwentokenizer/qwen.tiktoken" -O qwen.tiktoken    
+        wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/tokenizers/qwentokenizer/qwen.tiktoken" -O qwen.tiktoken
         wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/tokenizers/qwentokenizer/qwen_generation_utils.py" -O qwen_generation_utils.py
         wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/tokenizers/qwentokenizer/tokenization_qwen.py" -O tokenization_qwen.py
         ```
@@ -173,7 +184,7 @@ Require vLLM-FL env
     ```yaml
     - serve_id: vllm_model
       engine_args:
-        model: ./Qwen3-0.6B          # modify: Set model directory 
+        model: ./Qwen3-0.6B          # modify: Set model directory
         host: 0.0.0.0
         max_model_len: 4096
         max_num_seqs: 4
@@ -211,6 +222,66 @@ Require vLLM-FL env
     python run.py --config-path ./examples/qwen3/conf --config-name serve action=stop
     ```
 
+### RL
+Require verl-FL env
+
+1. Prepare model
+    ```sh
+    modelscope download --model Qwen/Qwen3-0.6B --local_dir ./Qwen3-0.6B
+    ```
+2. Prepare dataset
+    ```
+    mkdir gsm8k && cd gsm8k
+    wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/rl/datasets/gsm8k/train.parquet"
+    wget "https://baai-flagscale.ks3-cn-beijing.ksyuncs.com/rl/datasets/gsm8k/test.parquet"
+
+    ```
+
+3. Edit config
+
+    Modify model path in ./examples/qwen3/conf/rl/0_6b.yaml at line 12 for dataset
+    ```yaml
+    data:
+        train_files: /workspace/data/gsm8k/train.parquet # modify: Set your train dataset
+        val_files: /workspace/data/gsm8k/test.parquet # modify: Set your test dataset
+        train_batch_size: 1024
+        max_prompt_length: 512
+        max_response_length: 1024
+        filter_overlong_prompts: true
+        truncation: "error"
+    ```
+
+    Modify model path in ./examples/qwen3/conf/rl/0_6b.yaml at line 21 for model checkpoint
+    ```yaml
+    actor_rollout_ref:
+        model:
+            path: /workspace/data/ckpt/Qwen3-0.6B # modify: Set your model checkpoint directory
+            use_remove_padding: true
+            enable_gradient_checkpointing: true
+            trust_remote_code: true
+    ```
+
+    Modify config in ./examples/qwen3/conf/rl.yaml for experiment
+    ```yaml
+    experiment:
+        exp_name: 0_6b
+        exp_dir: /workspace/qwen3-rl/ # modify: Set your experiment directory
+    ```
+
+4. Start rl:
+    ```sh
+    python run.py --config-path ./examples/qwen3/conf --config-name rl action=run
+    ```
+You can check the output in your experiment directory.
+
+5. Stop rl:
+    ```sh
+    python run.py --config-path ./examples/qwen3/conf --config-name rl action=stop
+    ```
+    or force to stop ray cluster.
+    ```sh
+    ray stop
+    ```
 
 ### Serving DeepSeek-R1 <a name="deepseek-r1-serving"></a>
 
