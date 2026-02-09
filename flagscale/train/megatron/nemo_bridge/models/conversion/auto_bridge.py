@@ -126,22 +126,50 @@ class AutoBridge(OriginalAutoBridge):
 
 
     @classmethod
-    def from_hf_config(cls, config: PretrainedConfig) -> "AutoBridge":
+    def from_hf_config(cls, config: PretrainedConfig, modeling_path=None, model_name= None) -> "AutoBridge":
+        
         cls._validate_config(config)
         model = PreTrainedCausalLM()
         model.config = config
         import torch
-
         from accelerate import init_empty_weights
         from accelerate.utils import set_module_tensor_to_device
+        
+        hf_model = None 
+        if modeling_path :
+            import os,sys
+            import importlib.util
+            abs_model_path = os.path.abspath(modeling_path)
+            model_dir = os.path.dirname(abs_model_path)
+            if model_dir not in sys.path:
+                sys.path.insert(0, model_dir)
+            module_name = "dynamic_model_module"
+            try:
+                spec = importlib.util.spec_from_file_location(module_name, abs_model_path)
+                assert spec is not None
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[module_name] = module
+                spec.loader.exec_module(module)
+                model_class = getattr(module, model_name)
+                with init_empty_weights():
+                    hf_model = model_class._from_config(model.config)
+                for name, param in hf_model.named_parameters():
+                    set_module_tensor_to_device(
+                        hf_model, name, "cpu", torch.empty(*param.size(), dtype=model.config.torch_dtype)
+                    )
+            except Exception as e:
+                print(f"import module error: {e}")
 
-        with init_empty_weights():
-            hf_model = AutoModelForCausalLM.from_config(model.config)
+        elif not modeling_path and config :
+            with init_empty_weights():
+                hf_model = AutoModelForCausalLM.from_config(model.config)
 
-        for name, param in hf_model.named_parameters():
-            set_module_tensor_to_device(
-                hf_model, name, "cpu", torch.empty(*param.size(), dtype=model.config.torch_dtype)
-            )
+            for name, param in hf_model.named_parameters():
+                set_module_tensor_to_device(
+                    hf_model, name, "cpu", torch.empty(*param.size(), dtype=model.config.torch_dtype)
+                )
+        else: 
+            raise ValueError("Need one args, model_path or config, to build HF model.")
         model.model = hf_model
         return cls(model)
 
@@ -173,7 +201,6 @@ class AutoBridge(OriginalAutoBridge):
         show_progress: bool = True,
         strict: bool = True,
     ) -> None:
-
         if dist.is_available() and dist.is_initialized():
             dist.barrier()
         dispatch_instance = (self._causal_lm_architecture, self._get_model_instance(model))
@@ -200,3 +227,17 @@ class AutoBridge(OriginalAutoBridge):
     @property
     def _model_bridge(self) -> "MegatronModelBridge":
         return model_bridge.get_model_bridge(self._causal_lm_architecture)
+
+    def convert_mg2hf_config(margs, save_path, model_type):
+        assert model_type is not None, "model_type is None"
+        if hasattr(model_bridge.get_model_bridge, "_exact_types"):
+            registry = model_bridge.get_model_bridge._exact_types
+            if isinstance(model_type, str):
+                has_implementation = model_type in registry
+            else:
+                has_implementation = (model_type in registry) or (getattr(model_type, "__name__", None) in registry)
+
+            if not has_implementation:
+                raise ValueError(f"\n✗ Model architecture '{model_type}' is not yet supported\n\n")
+        model_bridge_class = model_bridge.get_model_bridge(model_type)
+        return model_bridge_class.save_args_mg2hf(margs, save_path)

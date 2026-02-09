@@ -474,20 +474,19 @@ def save_checkpoint(iteration, model, optimizer, opt_param_scheduler, num_floati
     # save hf format model weight
     hf_checkpoint_name = get_checkpoint_name(save_dir, iteration, release=False, pipeline_parallel=pipeline_parallel,
         tensor_rank=tensor_rank, pipeline_rank=pipeline_rank, expert_parallel=expert_parallel, expert_rank=expert_rank, return_base_dir=True)
-    if args.save_hf and hasattr(args,'hf_config_path') and args.save_hf_interval :
-        assert args.hf_config_path is not None, "hf_config_path should not be None"
+    if args.save_hf and args.save_hf_interval :
         if iteration % args.save_hf_interval == 0 or iteration == args.train_iters:
             #use megatron bridge
             from megatron.nemo_bridge.models import AutoBridge
-            from megatron.bridge.models.hf_pretrained.safe_config_loader import safe_load_config_with_retry
-            from transformers import AutoConfig
             #Load the HF model from config
-            config_load = args.hf_config_path
-            config = safe_load_config_with_retry(config_load, trust_remote_code=False)
-            bridge = AutoBridge.from_hf_config(config)
-            #Save the HF model weights in the corresponding iteration's safetensor folder.
             safe_save = os.path.join(hf_checkpoint_name, 'safetensor')
+            model_name = args.model_name
+            model_path = args.model_path
+            hf_config = AutoBridge.convert_mg2hf_config(args, safe_save, model_name)
+            bridge = AutoBridge.from_hf_config(hf_config, model_path, model_name)
+            #Save the HF model weights in the corresponding iteration's safetensor folder.
             bridge.save_hf_pretrained(model=model,path=safe_save)
+
 
     # Save distributed optimizer's custom parameter state.
     if (

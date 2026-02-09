@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 from megatron.bridge.models.conversion.model_bridge import MegatronModelBridge as OriginalMegatronModelBridge
 from megatron.bridge.models.conversion.model_bridge import (
     _megatron_local_name_to_global,
-    stream_weights_megatron_to_hf,
     HFWeightTuple, 
     WeightConversionTask,
 )
@@ -292,6 +291,20 @@ class MegatronModelBridge(OriginalMegatronModelBridge):
 def get_model_bridge(hf_architecture) -> "MegatronModelBridge":
     """Get the appropriate model bridge for a given HuggingFace architecture."""
     ...
+
+@dispatch
+def stream_weights_megatron_to_hf(
+    dispatch_instance: MegatronModel,
+    megatron_model: Union[MegatronModel, List[MegatronModel]],
+    hf_pretrained: HFPreTrained,
+    cpu: bool = True,
+    show_progress: bool = True,
+    conversion_tasks: Optional[List[WeightConversionTask]] = None,
+) -> Iterable[HFWeightTuple]:
+    """Bridge Megatron model state to HuggingFace format."""
+    ...
+
+
 
 def register_bridge_implementation(
     *,

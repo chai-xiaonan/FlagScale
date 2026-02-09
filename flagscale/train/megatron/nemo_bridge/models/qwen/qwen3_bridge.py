@@ -19,7 +19,7 @@ from megatron.nemo_bridge.models.hf_pretrained.causal_lm import PreTrainedCausal
 from megatron.bridge.models.qwen.qwen_provider import Qwen3ModelProvider
 
 
-@MegatronModelBridge.register_bridge(source=Qwen3ForCausalLM, target=GPTModel)
+@MegatronModelBridge.register_bridge(source="Qwen3ForCausalLM", target=GPTModel)
 class Qwen3Bridge(MegatronModelBridge):
     """
     Megatron Bridge for Qwen3 Causal LM.
@@ -104,3 +104,31 @@ class Qwen3Bridge(MegatronModelBridge):
         )
 
         return MegatronMappingRegistry(*mapping_list)
+
+    def save_args_mg2hf(self, args, save_path):
+        from transformers import Qwen3Config
+        config = Qwen3Config(
+            vocab_size=args.vocab_size,
+            hidden_size=args.hidden_size,
+            intermediate_size=args.ffn_hidden_size,
+            num_hidden_layers=args.encoder_num_layers,
+            num_attention_heads=args.num_attention_heads,
+            num_key_value_heads=args.num_query_groups,
+            head_dim=args.kv_channels,
+            hidden_act="silu",
+            max_position_embeddings=args.max_position_embeddings,
+            initializer_range=args.init_method_std,
+            rms_norm_eps=args.norm_epsilon,
+            use_cache=True,
+            tie_word_embeddings=(not args.untie_embeddings_and_output_weights),
+            rope_theta=args.rotary_base,
+            attention_dropout=args.attention_dropout,
+            torch_dtype=args.params_dtype,
+        )
+        config.architectures = ["Qwen3ForCausalLM"]
+        auto_map = dict()
+        auto_map['AutoConfig'] = 'configuration_qwen3.Qwen3Config'
+        auto_map['AutoModelForCausalLM'] = 'modeling_qwen3.Qwen3ForCausalLM'
+        config.auto_map = auto_map
+        config.save_pretrained(save_path)
+        return config
